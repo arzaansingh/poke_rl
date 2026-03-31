@@ -1,0 +1,40 @@
+# Binary models (large pickle files)
+*.pkl
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Training outputs (generated at runtime)
+grid_results/
+plots/
+stdout_logs/
+*.log
+live_status*.json
+
+# OS files
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Pokemon Showdown (external dependency)
+pokemon-showdown/
+
+# Old experiment versions (not part of research)
+v13_hq_dense_g1/
+v15/
+v16/
+v16gen4/
+v17/
+v17.1gen4/
+v17gen4/
+v18gen4/
+backup/
+
+# Misc
+Terminal Saved Output.txt
+dpp_ou_teams.txt
+.claude/
