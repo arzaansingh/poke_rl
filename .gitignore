@@ -1,0 +1,9 @@
+
+grid_results/
+plots/
+__pycache__/
+*.pkl
+*.pyc
+.DS_Store
+stdout_logs/
+*.log
