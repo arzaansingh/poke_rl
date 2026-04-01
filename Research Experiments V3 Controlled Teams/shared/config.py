@@ -45,7 +45,7 @@ RANDOM_SEEDS = list(range(1, 31))  # [1, 2, ..., 30]
 # --- Q-Learning Hyperparameters (optimized from RL literature) ---
 ALPHA = 0.1       # Learning rate — standard for tabular Q-learning (Sutton & Barto 2018)
 GAMMA = 0.99      # Discount factor — better for 20-40 turn episodes (0.99^30=0.74)
-LAMBDA = 0.9      # Trace decay — λ=0.9 empirically optimal for TD(λ) (Singh & Sutton 1996)
+LAMBDA = 0.6967   # Trace decay — optimized via V1 grid search (originally 0.9)
 
 # --- Epsilon Schedule ---
 EPS_START = 1.0
