@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PokeAgent — Poster Graphics Builder</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#2d3436;padding:24px}
+  h1{text-align:center;color:#006747;margin-bottom:4px;font-size:28px}
+  .sub{text-align:center;color:#636e72;margin-bottom:20px;font-size:13px}
+  .section{background:#fff;max-width:960px;margin:0 auto 24px;padding:18px 22px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+  .section h2{color:#006747;font-size:18px;margin-bottom:2px}
+  .section p.d{color:#636e72;font-size:12px;margin-bottom:10px}
+  .bar{margin-bottom:8px}
+  .btn{border:none;padding:6px 14px;border-radius:5px;cursor:pointer;font-size:12px;margin-right:5px;color:#fff;transition:background .2s}
+  .btn.b{background:#418FDE}.btn.b:hover{background:#2d6fbf}
+  .btn.g{background:#006747}.btn.g:hover{background:#004d35}
+  svg{display:block;margin:0 auto}
+</style>
+</head>
+<body>
+<h1>PokeAgent — Poster Graphics Builder</h1>
+<p class="sub">All poster visualizations with unified Tulane + Pok&eacute;mon color theme. Export each as SVG or high-res PNG.</p>
+
+<div class="section"><h2>1. MDP Diagram</h2><p class="d">Agent–Environment RL cycle with Pok&eacute;mon battle context.</p>
+  <div class="bar"><button class="btn b" onclick="xSVG('mdp-svg','mdp_diagram')">&#11015; SVG</button><button class="btn g" onclick="xPNG('mdp-svg','mdp_diagram')">&#11015; PNG</button></div>
+  <svg id="mdp-svg"></svg></div>
+
+<div class="section"><h2>2. Smart Initialization</h2><p class="d">Zero Init vs Heuristic Smart Init side-by-side comparison.</p>
+  <div class="bar"><button class="btn b" onclick="xSVG('smart-svg','smart_init_diagram')">&#11015; SVG</button><button class="btn g" onclick="xPNG('smart-svg','smart_init_diagram')">&#11015; PNG</button></div>
+  <svg id="smart-svg"></svg></div>
+
+<div class="section"><h2>3. Hierarchical Architecture</h2><p class="d">Master agent (moves + SWITCH) → Sub-agent (pick switch target).</p>
+  <div class="bar"><button class="btn b" onclick="xSVG('arch-svg','architecture_diagram')">&#11015; SVG</button><button class="btn g" onclick="xPNG('arch-svg','architecture_diagram')">&#11015; PNG</button></div>
+  <svg id="arch-svg"></svg></div>
+
+<div class="section"><h2>4. Performance Heatmap</h2><p class="d">Mean final rolling win rate (%) — all 8 models × 8 HP combos. Green = above 50%, red = below.</p>
+  <div class="bar"><button class="btn b" onclick="xSVG('heat-svg','heatmap_rollingwin')">&#11015; SVG</button><button class="btn g" onclick="xPNG('heat-svg','heatmap_rollingwin')">&#11015; PNG</button></div>
+  <svg id="heat-svg"></svg></div>
+
+<div class="section"><h2>5. Learning Curves (hp_001)</h2><p class="d">Mean rolling win rate over 50K battles for the best HP combo (α=0.1, γ=0.99, λ=0.7).</p>
+  <div class="bar"><button class="btn b" onclick="xSVG('curve-svg','hp_001_rollingwin')">&#11015; SVG</button><button class="btn g" onclick="xPNG('curve-svg','hp_001_rollingwin')">&#11015; PNG</button></div>
+  <svg id="curve-svg"></svg></div>
+
+<div class="section"><h2>6. Box Plot + Strip (hp_001)</h2><p class="d">Distribution of final rolling win rates across 10 runs per model.</p>
+  <div class="bar"><button class="btn b" onclick="xSVG('box-svg','hp_001_box_violin')">&#11015; SVG</button><button class="btn g" onclick="xPNG('box-svg','hp_001_box_violin')">&#11015; PNG</button></div>
+  <svg id="box-svg"></svg></div>
+
+<div class="section"><h2>7. Interaction Plot (hp_001)</h2><p class="d">Architecture × Initialization interaction — does smart init help more for Flat or Hier?</p>
+  <div class="bar"><button class="btn b" onclick="xSVG('int-svg','hp_001_interaction')">&#11015; SVG</button><button class="btn g" onclick="xPNG('int-svg','hp_001_interaction')">&#11015; PNG</button></div>
+  <svg id="int-svg"></svg></div>
+
+<div class="section"><h2>8. Factor Effect Sizes</h2><p class="d">Impact (percentage-point improvement) of each experimental factor.</p>
+  <div class="bar"><button class="btn b" onclick="xSVG('fx-svg','effect_sizes')">&#11015; SVG</button><button class="btn g" onclick="xPNG('fx-svg','effect_sizes')">&#11015; PNG</button></div>
+  <svg id="fx-svg"></svg></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  UNIFIED COLOR PALETTE
+// ═══════════════════════════════════════════════════
+const C = {
+  // Tulane brand
+  green:'#006747', blue:'#418FDE', kelly:'#43B02A', dark:'#003D2B',
+  // Pokemon types
+  fire:'#EE8130', water:'#6390F0', grass:'#7AC74C', electric:'#F7D02C',
+  ice:'#96D9D6', fighting:'#C22E28', bug:'#A6B91A', steel:'#B7B7CE',
+  poison:'#A33EA1', psychic:'#F95587', ground:'#E2BF65', normal:'#A8A77A',
+  // UI
+  text:'#2d3436', light:'#636e72', border:'#dfe6e9', bg:'#f8f9fa',
+};
+// 4 base model colors: (arch × init) + line style for epsilon
+const MC = {
+  flat_zero:'#95a5a6', flat_smart:'#e67e22',
+  hier_zero:'#2980b9', hier_smart:'#006747',
+};
+const MODELS = [
+  {key:'M1',label:'Flat+Zero (Decay)', base:'flat_zero', dash:false},
+  {key:'M2',label:'Flat+Smart (Decay)', base:'flat_smart', dash:false},
+  {key:'M3',label:'Hier+Zero (Decay)', base:'hier_zero', dash:false},
+  {key:'M4',label:'Hier+Smart (Decay)', base:'hier_smart', dash:false},
+  {key:'M5',label:'Flat+Zero (Fixed ε)', base:'flat_zero', dash:true},
+  {key:'M6',label:'Flat+Smart (Fixed ε)', base:'flat_smart', dash:true},
+  {key:'M7',label:'Hier+Zero (Fixed ε)', base:'hier_zero', dash:true},
+  {key:'M8',label:'Hier+Smart (Fixed ε)', base:'hier_smart', dash:true},
+];
+const FONT = "'Segoe UI',Arial,sans-serif";
+const MONO = "'SF Mono',Consolas,monospace";
+
+// ═══════════════════════════════════════════════════
+//  EMBEDDED DATA
+// ═══════════════════════════════════════════════════
+// summary.csv: mean final rolling WR per model per HP combo (×100 for %)
+const HEAT = [
+  {id:'hp_001',a:0.1,g:0.99,l:0.7,  v:[10.78,51.44,49.72,58.25,10.63,52.61,48.84,59.79]},
+  {id:'hp_003',a:0.1,g:0.999,l:0.7, v:[10.41,52.07,49.58,57.27,10.48,52.33,47.90,58.84]},
+  {id:'hp_005',a:0.2,g:0.99,l:0.7,  v:[10.01,48.71,41.97,49.86,9.82,48.91,41.53,51.90]},
+  {id:'hp_007',a:0.2,g:0.999,l:0.7, v:[9.73,48.74,41.09,48.45,9.21,48.58,39.66,50.69]},
+  {id:'hp_002',a:0.1,g:0.99,l:0.9,  v:[6.20,45.44,39.97,47.74,5.87,44.13,35.62,48.54]},
+  {id:'hp_004',a:0.1,g:0.999,l:0.9, v:[6.27,45.16,37.60,46.50,6.13,44.03,33.64,47.13]},
+  {id:'hp_006',a:0.2,g:0.99,l:0.9,  v:[6.44,41.63,31.83,38.82,6.07,42.59,29.70,39.86]},
+  {id:'hp_008',a:0.2,g:0.999,l:0.9, v:[6.31,41.33,30.20,37.27,6.72,40.68,27.37,38.51]},
+];
+// hp_001 learning curves (mean of 10 runs, sampled)
+const CURVES = {
+  M1:[[1e3,.0414],[6e3,.046],[11e3,.0499],[16e3,.0592],[21e3,.0683],[26e3,.0813],[31e3,.083],[36e3,.0977],[41e3,.0995],[46e3,.1078],[5e4,.1078]],
+  M2:[[1e3,.0431],[6e3,.0908],[11e3,.1719],[16e3,.2692],[21e3,.3945],[26e3,.5051],[31e3,.5128],[36e3,.5238],[41e3,.519],[46e3,.5165],[5e4,.5144]],
+  M3:[[1e3,.0892],[6e3,.1305],[11e3,.1943],[16e3,.2699],[21e3,.3782],[26e3,.4792],[31e3,.4872],[36e3,.4934],[41e3,.4997],[46e3,.4966],[5e4,.4972]],
+  M4:[[1e3,.0959],[6e3,.1568],[11e3,.2509],[16e3,.3514],[21e3,.473],[26e3,.5858],[31e3,.5824],[36e3,.5828],[41e3,.5812],[46e3,.5769],[5e4,.5825]],
+  M5:[[1e3,.0393],[6e3,.0548],[11e3,.0609],[16e3,.0689],[21e3,.0793],[26e3,.0834],[31e3,.0871],[36e3,.0914],[41e3,.1029],[46e3,.1006],[5e4,.1063]],
+  M6:[[1e3,.4687],[6e3,.4744],[11e3,.4987],[16e3,.4972],[21e3,.5017],[26e3,.5075],[31e3,.5104],[36e3,.5283],[41e3,.5212],[46e3,.5206],[5e4,.5261]],
+  M7:[[1e3,.1383],[6e3,.3066],[11e3,.3776],[16e3,.412],[21e3,.436],[26e3,.4436],[31e3,.4609],[36e3,.4672],[41e3,.4755],[46e3,.4804],[5e4,.4884]],
+  M8:[[1e3,.473],[6e3,.5324],[11e3,.5631],[16e3,.5675],[21e3,.5793],[26e3,.5773],[31e3,.5819],[36e3,.5996],[41e3,.5874],[46e3,.6008],[5e4,.5979]],
+};
+// hp_001 individual final rolling WRs (10 runs each)
+const FINALS = {
+  M1:[.048,.246,.090,.075,.063,.069,.092,.080,.060,.255],
+  M2:[.419,.540,.513,.497,.498,.545,.500,.528,.467,.637],
+  M3:[.453,.624,.564,.416,.489,.443,.428,.467,.456,.632],
+  M4:[.497,.654,.591,.519,.615,.570,.528,.567,.544,.740],
+  M5:[.051,.221,.095,.088,.042,.080,.108,.075,.066,.237],
+  M6:[.421,.550,.539,.508,.517,.560,.490,.512,.516,.648],
+  M7:[.415,.609,.527,.419,.505,.444,.419,.451,.457,.638],
+  M8:[.504,.686,.612,.531,.635,.561,.561,.574,.572,.743],
+};
+
+// ═══════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════
+function box(g,x,y,w,h,fill,rx=8){return g.append('rect').attr('x',x).attr('y',y).attr('width',w).attr('height',h).attr('rx',rx).attr('fill',fill).attr('stroke','none')}
+function outline(g,x,y,w,h,stroke,rx=8){return g.append('rect').attr('x',x).attr('y',y).attr('width',w).attr('height',h).attr('rx',rx).attr('fill','none').attr('stroke',stroke).attr('stroke-width',1.5)}
+function txt(g,x,y,s,o={}){const t=g.append('text').attr('x',x).attr('y',y).attr('text-anchor',o.anchor||'middle').attr('dominant-baseline',o.bl||'central').attr('fill',o.fill||C.text).attr('font-size',o.sz||'14px').attr('font-family',o.mono?MONO:FONT);if(o.bold)t.attr('font-weight','bold');t.text(s);return t}
+function mkMarker(svg,id,color){let d=svg.select('defs');if(d.empty())d=svg.append('defs');if(d.select('#'+id).empty())d.append('marker').attr('id',id).attr('viewBox','0 0 10 10').attr('refX',9).attr('refY',5).attr('markerWidth',7).attr('markerHeight',7).attr('orient','auto').append('path').attr('d','M0 1L10 5L0 9z').attr('fill',color)}
+function arrow(g,x1,y1,x2,y2,color,mid){const id='a'+color.replace(/#/g,'');mkMarker(g,id,color);if(mid)g.append('path').attr('d',`M${x1},${y1}Q${mid[0]},${mid[1]} ${x2},${y2}`).attr('fill','none').attr('stroke',color).attr('stroke-width',2.5).attr('marker-end',`url(#${id})`);else g.append('line').attr('x1',x1).attr('y1',y1).attr('x2',x2).attr('y2',y2).attr('stroke',color).attr('stroke-width',2.5).attr('marker-end',`url(#${id})`)}
+function pokeball(g,cx,cy,r){g.append('path').attr('d',`M${cx-r},${cy}A${r},${r} 0 0,1 ${cx+r},${cy}`).attr('fill','#EE1515').attr('stroke','#333').attr('stroke-width',1.5);g.append('path').attr('d',`M${cx-r},${cy}A${r},${r} 0 0,0 ${cx+r},${cy}`).attr('fill','#fff').attr('stroke','#333').attr('stroke-width',1.5);g.append('line').attr('x1',cx-r).attr('y1',cy).attr('x2',cx+r).attr('y2',cy).attr('stroke','#333').attr('stroke-width',2.5);g.append('circle').attr('cx',cx).attr('cy',cy).attr('r',r*.32).attr('fill','#fff').attr('stroke','#333').attr('stroke-width',1.5);g.append('circle').attr('cx',cx).attr('cy',cy).attr('r',r*.14).attr('fill','#333')}
+function typeBadge(g,x,y,label,color,w=80){box(g,x-w/2,y-12,w,24,color,12);txt(g,x,y,label,{fill:'#fff',sz:'12px',bold:true})}
+function median(arr){const s=[...arr].sort((a,b)=>a-b);const m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2}
+function q1(arr){const s=[...arr].sort((a,b)=>a-b);return s[Math.floor(s.length*.25)]}
+function q3(arr){const s=[...arr].sort((a,b)=>a-b);return s[Math.floor(s.length*.75)]}
+
+function initSVG(id,w,h){const s=d3.select('#'+id).attr('width',w).attr('height',h).attr('xmlns','http://www.w3.org/2000/svg');s.append('rect').attr('width',w).attr('height',h).attr('fill','#fff');return s}
+
+// ═══════════════════════════════════════════════════
+//  1. MDP DIAGRAM
+// ═══════════════════════════════════════════════════
+function renderMDP(){
+  const W=900,H=460,svg=initSVG('mdp-svg',W,H);
+  const ax=195,ay=210;
+  box(svg,ax-95,ay-55,190,110,C.blue,12);pokeball(svg,ax-55,ay-15,14);
+  txt(svg,ax+10,ay-20,'Q(λ) Agent',{fill:'#fff',sz:'20px',bold:true});
+  txt(svg,ax,ay+15,'ε-greedy policy',{fill:'rgba(255,255,255,.85)',sz:'13px'});
+  txt(svg,ax,ay+35,'{(state, action) → Q}',{fill:'rgba(255,255,255,.7)',sz:'12px',mono:true});
+  const ex=705,ey=210;
+  box(svg,ex-95,ey-55,190,110,C.green,12);
+  txt(svg,ex,ey-20,'Pokémon Battle',{fill:'#fff',sz:'20px',bold:true});
+  txt(svg,ex,ey+10,'Showdown Server',{fill:'rgba(255,255,255,.85)',sz:'13px'});
+  txt(svg,ex,ey+32,'Gen 4 OU rules',{fill:'rgba(255,255,255,.7)',sz:'12px'});
+  arrow(svg,ax+100,ay-30,ex-100,ey-30,C.fire,[450,ay-110]);
+  txt(svg,450,ay-115,'Action aₜ',{sz:'16px',bold:true,fill:C.fire});
+  typeBadge(svg,370,ay-88,'⚡ Thunderbolt',C.electric,110);typeBadge(svg,500,ay-88,'🔄 Switch',C.steel,80);
+  arrow(svg,ex-100,ey+35,ax+100,ay+35,C.kelly,[450,ey+120]);
+  txt(svg,450,ey+132,'Reward rₜ  +  State sₜ₊₁',{sz:'16px',bold:true,fill:C.kelly});
+  // State detail
+  box(svg,170-130,345-48,260,95,C.bg,8);outline(svg,170-130,345-48,260,95,C.border,8);
+  txt(svg,170,345-30,'State (20–35 features)',{sz:'13px',bold:true,fill:C.blue});
+  txt(svg,170,345-8,'species · HP bucket · status',{sz:'12px',fill:C.light});
+  txt(svg,170,345+10,'type · boosts · speed · ability',{sz:'12px',fill:C.light});
+  txt(svg,170,345+28,'hazards · opponent info',{sz:'12px',fill:C.light});
+  // Reward detail
+  box(svg,690-140,345-48,280,95,C.bg,8);outline(svg,690-140,345-48,280,95,C.border,8);
+  txt(svg,690,345-30,'Reward (dense shaping)',{sz:'13px',bold:true,fill:C.kelly});
+  txt(svg,690,345-8,'+0.10  opponent faint',{sz:'12px',fill:C.light,mono:true});
+  txt(svg,690,345+10,'+0.05  HP trade advantage',{sz:'12px',fill:C.light,mono:true});
+  txt(svg,690,345+28,'±1.00  win / loss (terminal)',{sz:'12px',fill:C.light,mono:true});
+  box(svg,400,195,100,30,'rgba(255,255,255,.9)',15);outline(svg,400,195,100,30,C.border,15);
+  txt(svg,450,210,'20–60 turns',{sz:'12px',fill:C.light});
+  txt(svg,W/2,28,'Markov Decision Process: Pokémon Battle as Reinforcement Learning',{sz:'18px',bold:true,fill:C.green});
+}
+
+// ═══════════════════════════════════════════════════
+//  2. SMART INIT DIAGRAM
+// ═══════════════════════════════════════════════════
+function renderSmartInit(){
+  const W=900,H=520,svg=initSVG('smart-svg',W,H);
+  txt(svg,W/2,28,'Q-Value Initialization: Zero vs Heuristic Smart Init',{sz:'18px',bold:true,fill:C.green});
+  box(svg,W/2-200,50,400,32,C.bg,6);outline(svg,W/2-200,50,400,32,C.border,6);
+  txt(svg,W/2,66,'Scenario: Infernape vs Swampert — first visit to this state',{sz:'12px',fill:C.light});
+  const pW=360,pH=380,pY=100,bH=36,bG=8,bW=280;
+  const acts=[{n:'Grass Knot',c:C.grass,q:.010,note:'4× effective!'},
+    {n:'Close Combat',c:C.fighting,q:.003},{n:'U-turn',c:C.bug,q:-.002},
+    {n:'Flare Blitz',c:C.fire,q:-.008,note:'resisted'},{n:'→ Roserade',c:C.grass,q:.006,note:'type advantage'}];
+  // Left panel
+  const lx=220;
+  box(svg,lx-pW/2,pY,pW,pH,'#fafafa',10);outline(svg,lx-pW/2,pY,pW,pH,'#e0e0e0',10);
+  txt(svg,lx,pY+24,'Zero Initialization',{sz:'16px',bold:true,fill:C.light});
+  txt(svg,lx,pY+46,'Q₀(s, a) = 0  for all actions',{sz:'13px',fill:C.light,mono:true});
+  const bY=pY+80,bX=lx-bW/2;
+  acts.forEach((a,i)=>{const y=bY+i*(bH+bG);box(svg,bX,y,bW,bH,'#eee',4);svg.append('circle').attr('cx',bX+16).attr('cy',y+bH/2).attr('r',7).attr('fill',a.c);txt(svg,bX+32,y+bH/2,a.n,{sz:'13px',anchor:'start'});txt(svg,bX+bW-12,y+bH/2,'Q = 0.000',{sz:'12px',anchor:'end',fill:'#999',mono:true})});
+  const probY=bY+5*(bH+bG)+10;
+  box(svg,lx-140,probY,280,50,'#fff3e0',6);outline(svg,lx-140,probY,280,50,'#ffb74d',6);
+  txt(svg,lx,probY+16,'⚠ All actions look equal',{sz:'13px',bold:true,fill:'#e65100'});
+  txt(svg,lx,probY+35,'Agent picks randomly — no guidance',{sz:'11px',fill:'#bf360c'});
+  // Right panel
+  const rx=680,bXr=rx-bW/2;
+  box(svg,rx-pW/2,pY,pW,pH,'#f0faf5',10);outline(svg,rx-pW/2,pY,pW,pH,C.green+'40',10);
+  txt(svg,rx,pY+24,'Heuristic Smart Initialization',{sz:'16px',bold:true,fill:C.green});
+  txt(svg,rx,pY+46,'Q₀(s, a) ∈ [−0.01, +0.01]',{sz:'13px',fill:C.green,mono:true});
+  acts.forEach((a,i)=>{const y=bY+i*(bH+bG);box(svg,bXr,y,bW,bH,'#fff',4);outline(svg,bXr,y,bW,bH,C.border,4);svg.append('circle').attr('cx',bXr+16).attr('cy',y+bH/2).attr('r',7).attr('fill',a.c);txt(svg,bXr+32,y+bH/2-6,a.n,{sz:'13px',anchor:'start'});
+    const bc=bXr+bW/2+40,mxB=60,fW=Math.abs(a.q)/.01*mxB,fc=a.q>=0?C.kelly:'#e74c3c',fX=a.q>=0?bc:bc-fW;
+    svg.append('rect').attr('x',fX).attr('y',y+4).attr('width',fW).attr('height',bH-8).attr('fill',fc).attr('opacity',.3).attr('rx',3);
+    txt(svg,bXr+bW-12,y+bH/2-6,(a.q>=0?'+':'')+a.q.toFixed(3),{sz:'12px',anchor:'end',fill:fc,mono:true,bold:true});
+    if(a.note)txt(svg,bXr+32,y+bH/2+10,a.note,{sz:'10px',anchor:'start',fill:C.light})});
+  box(svg,rx-140,probY,280,50,'#e8f5e9',6);outline(svg,rx-140,probY,280,50,C.kelly,6);
+  txt(svg,rx,probY+16,'✓ Actions ranked by domain knowledge',{sz:'13px',bold:true,fill:'#1b5e20'});
+  txt(svg,rx,probY+35,'One reward signal overrides — learning dominates',{sz:'11px',fill:'#2e7d32'});
+  arrow(svg,lx+pW/2+8,pY+pH/2,rx-pW/2-8,pY+pH/2,C.blue);
+  txt(svg,W/2,pY+pH/2-12,'add heuristic',{sz:'12px',fill:C.blue,bold:true});
+  txt(svg,W/2,pY+pH/2+8,'priors',{sz:'12px',fill:C.blue,bold:true});
+}
+
+// ═══════════════════════════════════════════════════
+//  3. ARCHITECTURE DIAGRAM
+// ═══════════════════════════════════════════════════
+function renderArch(){
+  const W=900,H=600,svg=initSVG('arch-svg',W,H),cx=W/2;
+  txt(svg,cx,28,'Hierarchical Action Decomposition: Master + Sub-Agent',{sz:'18px',bold:true,fill:C.green});
+  // Battle state
+  const bsy=60,bsw=560,bsh=55;
+  box(svg,cx-bsw/2,bsy,bsw,bsh,C.bg,8);outline(svg,cx-bsw/2,bsy,bsw,bsh,C.blue,8);
+  txt(svg,cx,bsy+18,'Battle State (20-tuple)',{sz:'15px',bold:true,fill:C.blue});
+  txt(svg,cx,bsy+38,'species · HP · status · type · ability · boosts · speed · opponent · hazards',{sz:'11px',fill:C.light,mono:true});
+  arrow(svg,cx,bsy+bsh+4,cx,bsy+bsh+32,C.blue);
+  // Master agent
+  const my=bsy+bsh+36,mw=620,mh=140;
+  box(svg,cx-mw/2,my,mw,mh,C.blue+'12',10);outline(svg,cx-mw/2,my,mw,mh,C.blue,10);
+  txt(svg,cx,my+22,'Master Agent — Q-table₁',{sz:'17px',bold:true,fill:C.blue});
+  txt(svg,cx,my+42,'"Should I use a move or switch?"',{sz:'12px',fill:C.light});
+  const acts=[{l:'Close Combat',c:C.fighting,w:115},{l:'Flare Blitz',c:C.fire,w:100},{l:'U-turn',c:C.bug,w:72},{l:'Grass Knot',c:C.grass,w:95},{l:'SWITCH',c:C.green,w:90}];
+  let bx=cx-250,by=my+68;
+  acts.forEach(a=>{const rx=a.l==='SWITCH'?16:6;box(svg,bx,by,a.w,32,a.c,rx);txt(svg,bx+a.w/2,by+16,a.l,{fill:'#fff',sz:a.l==='SWITCH'?'14px':'12px',bold:true});if(a.l==='SWITCH')outline(svg,bx-3,by-3,a.w+6,38,C.green,18);bx+=a.w+12});
+  txt(svg,cx-100,by+48,'← greedy or ε-random among moves →',{sz:'11px',fill:C.light});
+  // Arrow to sub
+  const scx=bx-45-12+45,subY=my+mh+75;
+  arrow(svg,scx,by+36,scx,subY-6,C.green);
+  svg.append('line').attr('x1',scx-80).attr('y1',(by+36+subY)/2).attr('x2',scx+80).attr('y2',(by+36+subY)/2).attr('stroke',C.green).attr('stroke-width',1.5).attr('stroke-dasharray','6,4');
+  txt(svg,scx,(by+40+subY)/2-2,'if SWITCH selected',{sz:'12px',bold:true,fill:C.green});
+  // Sub state
+  const ssw=480,ssh=42;
+  box(svg,cx-ssw/2,subY,ssw,ssh,C.bg,8);outline(svg,cx-ssw/2,subY,ssw,ssh,C.green+'80',8);
+  txt(svg,cx,subY+14,'Opponent Context + Bench Detail (17-tuple)',{sz:'13px',bold:true,fill:C.green});
+  txt(svg,cx,subY+32,'opp species · opp HP · candidate species · candidate HP · type matchups',{sz:'10px',fill:C.light,mono:true});
+  arrow(svg,cx,subY+ssh+4,cx,subY+ssh+30,C.green);
+  // Sub agent
+  const sy=subY+ssh+34,sw=560,sh=110;
+  box(svg,cx-sw/2,sy,sw,sh,C.green+'10',10);outline(svg,cx-sw/2,sy,sw,sh,C.green,10);
+  txt(svg,cx,sy+22,'Sub-Agent — Q-table₂',{sz:'17px',bold:true,fill:C.green});
+  txt(svg,cx,sy+42,'"Which Pokémon should I switch to?"',{sz:'12px',fill:C.light});
+  const cands=[{l:'Roserade',c:C.grass},{l:'Starmie',c:C.water},{l:'Gyarados',c:C.water},{l:'Scizor',c:C.bug},{l:'Togekiss',c:C.normal}];
+  let cx2=cx-232,cy2=sy+58;
+  cands.forEach(c=>{box(svg,cx2,cy2,88,28,c.c,6);txt(svg,cx2+44,cy2+14,c.l,{fill:'#fff',sz:'11px',bold:true});cx2+=98});
+  // Annotations
+  box(svg,cx+mw/2+16,my+mh/2-18,115,36,'#e8f5e9',6);outline(svg,cx+mw/2+16,my+mh/2-18,115,36,C.kelly,6);
+  txt(svg,cx+mw/2+73,my+mh/2,'4× smaller',{sz:'12px',bold:true,fill:'#1b5e20'});
+  box(svg,cx+mw/2+16,sy+10,115,36,'#e8f5e9',6);outline(svg,cx+mw/2+16,sy+10,115,36,C.kelly,6);
+  txt(svg,cx+mw/2+73,sy+28,'+2% win rate',{sz:'12px',bold:true,fill:'#1b5e20'});
+  box(svg,cx-240,H-34,480,28,C.bg,6);outline(svg,cx-240,H-34,480,28,C.border,6);
+  txt(svg,cx,H-20,'Flat model: single 35-dim state → all actions in one table (no decomposition)',{sz:'11px',fill:C.light});
+}
+
+// ═══════════════════════════════════════════════════
+//  4. HEATMAP
+// ═══════════════════════════════════════════════════
+function renderHeat(){
+  const W=900,H=420,svg=initSVG('heat-svg',W,H);
+  const margin={t:50,r:30,b:40,l:160},iw=W-margin.l-margin.r,ih=H-margin.t-margin.b;
+  const g=svg.append('g').attr('transform',`translate(${margin.l},${margin.t})`);
+  const shortLabels=['FZ-Dc','FS-Dc','HZ-Dc','HS-Dc','FZ-Fx','FS-Fx','HZ-Fx','HS-Fx'];
+  const comboLabels=HEAT.map(h=>`${h.id} (α=${h.a}, λ=${h.l})`);
+  const cellW=iw/8,cellH=ih/8;
+  // Color scale: red → white → green, midpoint at 30%
+  const colorScale=d3.scaleLinear().domain([5,30,62]).range(['#e74c3c','#fefefe',C.green]);
+  HEAT.forEach((row,ri)=>{
+    row.v.forEach((v,ci)=>{
+      g.append('rect').attr('x',ci*cellW).attr('y',ri*cellH).attr('width',cellW-2).attr('height',cellH-2).attr('rx',4).attr('fill',colorScale(v));
+      const textColor=v<15||v>50?'#fff':'#333';
+      txt(g,ci*cellW+cellW/2,ri*cellH+cellH/2,v.toFixed(1)+'%',{sz:'12px',bold:true,fill:textColor});
+    });
+    // Row label
+    txt(g,-8,ri*cellH+cellH/2,comboLabels[ri],{sz:'11px',anchor:'end',fill:C.text});
+  });
+  // Column labels
+  shortLabels.forEach((l,i)=>{
+    txt(g,i*cellW+cellW/2,-8,l,{sz:'12px',bold:true,fill:MC[MODELS[i].base]});
+  });
+  txt(svg,W/2,22,'Mean Final Rolling Win Rate (%) — All Models × HP Combos',{sz:'16px',bold:true,fill:C.green});
+}
+
+// ═══════════════════════════════════════════════════
+//  5. LEARNING CURVES
+// ═══════════════════════════════════════════════════
+function renderCurves(){
+  const W=900,H=420,svg=initSVG('curve-svg',W,H);
+  const m={t:50,r:180,b:50,l:70},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  const g=svg.append('g').attr('transform',`translate(${m.l},${m.t})`);
+  const x=d3.scaleLinear().domain([0,50000]).range([0,iw]);
+  const y=d3.scaleLinear().domain([0,.7]).range([ih,0]);
+  // Grid
+  [.1,.2,.3,.4,.5,.6,.7].forEach(v=>{g.append('line').attr('x1',0).attr('y1',y(v)).attr('x2',iw).attr('y2',y(v)).attr('stroke',C.border).attr('stroke-width',.8)});
+  // 50% reference line
+  g.append('line').attr('x1',0).attr('y1',y(.5)).attr('x2',iw).attr('y2',y(.5)).attr('stroke','#999').attr('stroke-width',1).attr('stroke-dasharray','6,4');
+  txt(g,iw+4,y(.5),'50%',{sz:'10px',anchor:'start',fill:'#999'});
+  // Axes
+  [0,10000,20000,30000,40000,50000].forEach(v=>{
+    g.append('line').attr('x1',x(v)).attr('y1',ih).attr('x2',x(v)).attr('y2',ih+5).attr('stroke',C.text);
+    txt(g,x(v),ih+18,(v/1000)+'K',{sz:'11px',fill:C.light});
+  });
+  [0,.1,.2,.3,.4,.5,.6,.7].forEach(v=>{
+    g.append('line').attr('x1',-5).attr('y1',y(v)).attr('x2',0).attr('y2',y(v)).attr('stroke',C.text);
+    txt(g,-10,y(v),(v*100).toFixed(0)+'%',{sz:'11px',anchor:'end',fill:C.light});
+  });
+  txt(g,iw/2,ih+40,'Battles',{sz:'13px',fill:C.text});
+  txt(g,-50,ih/2,'Win Rate',{sz:'13px',fill:C.text}).attr('transform',`rotate(-90,-50,${ih/2})`);
+  // Lines
+  const line=d3.line().x(d=>x(d[0])).y(d=>y(d[1])).curve(d3.curveMonotoneX);
+  MODELS.forEach((mod,i)=>{
+    const data=CURVES[mod.key];
+    g.append('path').attr('d',line(data)).attr('fill','none')
+      .attr('stroke',MC[mod.base]).attr('stroke-width',2.5)
+      .attr('stroke-dasharray',mod.dash?'8,4':'none').attr('opacity',.9);
+  });
+  // Legend
+  const lg=svg.append('g').attr('transform',`translate(${W-m.r+14},${m.t+10})`);
+  MODELS.forEach((mod,i)=>{
+    const ly=i*20;
+    lg.append('line').attr('x1',0).attr('y1',ly).attr('x2',24).attr('y2',ly)
+      .attr('stroke',MC[mod.base]).attr('stroke-width',2.5)
+      .attr('stroke-dasharray',mod.dash?'6,3':'none');
+    txt(lg,30,ly,mod.label,{sz:'10px',anchor:'start',fill:C.text});
+  });
+  txt(svg,W/2,22,'Learning Curves — hp_001 (α=0.1, γ=0.99, λ=0.7)',{sz:'16px',bold:true,fill:C.green});
+}
+
+// ═══════════════════════════════════════════════════
+//  6. BOX PLOT + STRIP
+// ═══════════════════════════════════════════════════
+function renderBox(){
+  const W=900,H=380,svg=initSVG('box-svg',W,H);
+  const m={t:50,r:30,b:60,l:60},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  const g=svg.append('g').attr('transform',`translate(${m.l},${m.t})`);
+  const y=d3.scaleLinear().domain([0,.8]).range([ih,0]);
+  const bandW=iw/8,pad=12;
+  // Grid
+  [.1,.2,.3,.4,.5,.6,.7,.8].forEach(v=>{g.append('line').attr('x1',0).attr('y1',y(v)).attr('x2',iw).attr('y2',y(v)).attr('stroke',C.border).attr('stroke-width',.8)});
+  g.append('line').attr('x1',0).attr('y1',y(.5)).attr('x2',iw).attr('y2',y(.5)).attr('stroke','#999').attr('stroke-width',1).attr('stroke-dasharray','6,4');
+  // Y axis
+  [0,.1,.2,.3,.4,.5,.6,.7,.8].forEach(v=>{txt(g,-8,y(v),(v*100).toFixed(0)+'%',{sz:'11px',anchor:'end',fill:C.light})});
+  txt(g,-45,ih/2,'Final Rolling Win Rate',{sz:'12px',fill:C.text}).attr('transform',`rotate(-90,-45,${ih/2})`);
+
+  MODELS.forEach((mod,i)=>{
+    const vals=FINALS[mod.key];
+    const cx=i*bandW+bandW/2;
+    const med=median(vals),lo=q1(vals),hi=q3(vals),mn=Math.min(...vals),mx=Math.max(...vals);
+    const bw=bandW-pad*2;
+    const col=MC[mod.base];
+    // Whiskers
+    g.append('line').attr('x1',cx).attr('y1',y(mn)).attr('x2',cx).attr('y2',y(mx)).attr('stroke',col).attr('stroke-width',1.5);
+    g.append('line').attr('x1',cx-bw/4).attr('y1',y(mn)).attr('x2',cx+bw/4).attr('y2',y(mn)).attr('stroke',col).attr('stroke-width',1.5);
+    g.append('line').attr('x1',cx-bw/4).attr('y1',y(mx)).attr('x2',cx+bw/4).attr('y2',y(mx)).attr('stroke',col).attr('stroke-width',1.5);
+    // Box
+    g.append('rect').attr('x',cx-bw/2).attr('y',y(hi)).attr('width',bw).attr('height',y(lo)-y(hi)).attr('fill',col).attr('opacity',.2).attr('stroke',col).attr('stroke-width',1.5).attr('rx',3);
+    // Median
+    g.append('line').attr('x1',cx-bw/2).attr('y1',y(med)).attr('x2',cx+bw/2).attr('y2',y(med)).attr('stroke',col).attr('stroke-width',2.5);
+    // Jittered dots
+    vals.forEach((v,j)=>{
+      const jitter=(Math.random()-.5)*bw*.6;
+      g.append('circle').attr('cx',cx+jitter).attr('cy',y(v)).attr('r',4).attr('fill',col).attr('opacity',.6).attr('stroke','#fff').attr('stroke-width',.5);
+    });
+    // X label
+    const short=['FZ','FS','HZ','HS','FZ','FS','HZ','HS'][i];
+    const eps=['Dc','Dc','Dc','Dc','Fx','Fx','Fx','Fx'][i];
+    txt(g,cx,ih+16,short,{sz:'12px',bold:true,fill:col});
+    txt(g,cx,ih+32,eps,{sz:'10px',fill:C.light});
+  });
+  txt(svg,W/2,22,'Final Win Rate Distribution — hp_001 (10 runs per model)',{sz:'16px',bold:true,fill:C.green});
+}
+
+// ═══════════════════════════════════════════════════
+//  7. INTERACTION PLOT
+// ═══════════════════════════════════════════════════
+function renderInteraction(){
+  const W=600,H=400,svg=initSVG('int-svg',W,H);
+  const m={t:50,r:140,b:50,l:70},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  const g=svg.append('g').attr('transform',`translate(${m.l},${m.t})`);
+  // Data: x=init (0=Zero, 1=Smart), lines=arch, separate for each eps
+  const data=[
+    {arch:'Flat',eps:'Decay',pts:[{x:0,y:.1078},{x:1,y:.5144}],color:MC.flat_zero,color2:MC.flat_smart,dash:false},
+    {arch:'Flat',eps:'Fixed',pts:[{x:0,y:.1063},{x:1,y:.5261}],color:MC.flat_zero,color2:MC.flat_smart,dash:true},
+    {arch:'Hier',eps:'Decay',pts:[{x:0,y:.4972},{x:1,y:.5825}],color:MC.hier_zero,color2:MC.hier_smart,dash:false},
+    {arch:'Hier',eps:'Fixed',pts:[{x:0,y:.4884},{x:1,y:.5979}],color:MC.hier_zero,color2:MC.hier_smart,dash:true},
+  ];
+  const x=d3.scalePoint().domain(['Zero Init','Smart Init']).range([0,iw]).padding(.3);
+  const y=d3.scaleLinear().domain([0,.7]).range([ih,0]);
+  // Grid
+  [.1,.2,.3,.4,.5,.6,.7].forEach(v=>{g.append('line').attr('x1',0).attr('y1',y(v)).attr('x2',iw).attr('y2',y(v)).attr('stroke',C.border).attr('stroke-width',.8)});
+  // Axes
+  ['Zero Init','Smart Init'].forEach(l=>{txt(g,x(l),ih+18,l,{sz:'13px',fill:C.text,bold:true})});
+  [0,.1,.2,.3,.4,.5,.6,.7].forEach(v=>{txt(g,-8,y(v),(v*100).toFixed(0)+'%',{sz:'11px',anchor:'end',fill:C.light})});
+  txt(g,-50,ih/2,'Win Rate',{sz:'12px',fill:C.text}).attr('transform',`rotate(-90,-50,${ih/2})`);
+  // Lines
+  data.forEach(d=>{
+    g.append('line').attr('x1',x('Zero Init')).attr('y1',y(d.pts[0].y)).attr('x2',x('Smart Init')).attr('y2',y(d.pts[1].y))
+      .attr('stroke',MC[d.arch.toLowerCase()+'_smart']).attr('stroke-width',2.5).attr('stroke-dasharray',d.dash?'8,4':'none');
+    g.append('circle').attr('cx',x('Zero Init')).attr('cy',y(d.pts[0].y)).attr('r',6).attr('fill',d.color);
+    g.append('circle').attr('cx',x('Smart Init')).attr('cy',y(d.pts[1].y)).attr('r',6).attr('fill',d.color2);
+  });
+  // Legend
+  const lg=svg.append('g').attr('transform',`translate(${W-m.r+14},${m.t+20})`);
+  [{l:'Flat (Decay)',c:MC.flat_smart,d:false},{l:'Flat (Fixed)',c:MC.flat_smart,d:true},
+   {l:'Hier (Decay)',c:MC.hier_smart,d:false},{l:'Hier (Fixed)',c:MC.hier_smart,d:true}].forEach((it,i)=>{
+    const ly=i*22;
+    lg.append('line').attr('x1',0).attr('y1',ly).attr('x2',22).attr('y2',ly).attr('stroke',it.c).attr('stroke-width',2.5).attr('stroke-dasharray',it.d?'6,3':'none');
+    txt(lg,28,ly,it.l,{sz:'11px',anchor:'start',fill:C.text});
+  });
+  txt(svg,W/2,22,'Architecture × Initialization Interaction — hp_001',{sz:'16px',bold:true,fill:C.green});
+}
+
+// ═══════════════════════════════════════════════════
+//  8. EFFECT SIZES
+// ═══════════════════════════════════════════════════
+function renderEffects(){
+  const W=700,H=360,svg=initSVG('fx-svg',W,H);
+  const m={t:50,r:30,b:30,l:200},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  const g=svg.append('g').attr('transform',`translate(${m.l},${m.t})`);
+  const effects=[
+    {label:'Smart Init (Flat)',pp:38.5,color:MC.flat_smart},
+    {label:'Smart Init (Hier)',pp:9.6,color:MC.hier_smart},
+    {label:'λ = 0.7 vs 0.9',pp:8.5,color:C.blue},
+    {label:'α = 0.1 vs 0.2',pp:4.9,color:C.blue},
+    {label:'Hierarchy (w/ Smart)',pp:2.0,color:MC.hier_smart},
+    {label:'Fixed ε (Hier+Smart)',pp:1.4,color:C.green},
+  ];
+  const x=d3.scaleLinear().domain([0,42]).range([0,iw]);
+  const barH=32,barGap=10;
+  // Grid
+  [0,10,20,30,40].forEach(v=>{g.append('line').attr('x1',x(v)).attr('y1',-5).attr('x2',x(v)).attr('y2',effects.length*(barH+barGap)).attr('stroke',C.border).attr('stroke-width',.8);txt(g,x(v),-12,'+'+v+'pp',{sz:'10px',fill:C.light})});
+  effects.forEach((e,i)=>{
+    const y=i*(barH+barGap);
+    // Bar
+    g.append('rect').attr('x',0).attr('y',y).attr('width',x(e.pp)).attr('height',barH).attr('fill',e.color).attr('opacity',.25).attr('rx',4);
+    g.append('rect').attr('x',0).attr('y',y).attr('width',x(e.pp)).attr('height',barH).attr('fill','none').attr('stroke',e.color).attr('stroke-width',1.5).attr('rx',4);
+    // Value label
+    txt(g,x(e.pp)+8,y+barH/2,'+'+e.pp.toFixed(1)+' pp',{sz:'13px',anchor:'start',fill:e.color,bold:true});
+    // Row label
+    txt(g,-8,y+barH/2,e.label,{sz:'13px',anchor:'end',fill:C.text});
+  });
+  txt(svg,W/2,22,'Factor Effect Sizes (percentage-point improvement)',{sz:'16px',bold:true,fill:C.green});
+}
+
+// ═══════════════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════════════
+function xSVG(id,fn){
+  const svg=document.getElementById(id),cl=svg.cloneNode(true);
+  const st=document.createElementNS('http://www.w3.org/2000/svg','style');
+  st.textContent=`text{font-family:${FONT}}`;cl.insertBefore(st,cl.firstChild);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(cl)],{type:'image/svg+xml'}));
+  a.download=fn+'.svg';a.click();URL.revokeObjectURL(a.href);
+}
+function xPNG(id,fn){
+  const svg=document.getElementById(id),cl=svg.cloneNode(true);
+  const st=document.createElementNS('http://www.w3.org/2000/svg','style');
+  st.textContent=`text{font-family:${FONT}}`;cl.insertBefore(st,cl.firstChild);
+  const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(cl)],{type:'image/svg+xml;charset=utf-8'}));
+  const img=new Image(),sc=4;
+  img.onload=()=>{const c=document.createElement('canvas');c.width=img.naturalWidth*sc;c.height=img.naturalHeight*sc;const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.scale(sc,sc);ctx.drawImage(img,0,0);c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=fn+'.png';a.click();},'image/png');URL.revokeObjectURL(url)};
+  img.src=url;
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER ALL
+// ═══════════════════════════════════════════════════
+renderMDP();
+renderSmartInit();
+renderArch();
+renderHeat();
+renderCurves();
+renderBox();
+renderInteraction();
+renderEffects();
+</script>
+</body>
+</html>

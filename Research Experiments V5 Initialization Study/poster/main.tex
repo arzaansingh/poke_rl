@@ -1,0 +1,392 @@
+\documentclass[final]{beamer}
+
+% 3 ft × 4 ft landscape = 91.44 cm × 121.92 cm
+\usepackage[orientation=landscape,size=custom,width=121.92,height=91.44,scale=1.14]{beamerposter}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{type1cm}
+\usepackage{microtype}
+
+\usepackage{amsmath,amssymb}
+\usepackage{dsfont}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{qrcode}
+
+% ===========================
+% Tulane Colors
+% ===========================
+\definecolor{TulaneGreen}{HTML}{006747}
+\definecolor{TulaneBlue}{HTML}{418FDE}
+\definecolor{TulaneKelly}{HTML}{43B02A}
+\definecolor{TulaneDark}{HTML}{003D2B}
+\definecolor{LightGreen}{HTML}{E8F5E9}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.06cm}
+\setlength{\columnsep}{1.0cm}
+
+\setbeamerfont{block title}{size=\Large,series=\bfseries}
+\setbeamerfont{block body}{size=\normalsize}
+\setbeamerfont{block title alerted}{size=\Large,series=\bfseries}
+\setbeamerfont{block body alerted}{size=\normalsize}
+
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{normal text}{fg=black,bg=white}
+\setbeamercolor{headline}{fg=white,bg=TulaneGreen}
+\setbeamercolor{footline}{fg=white,bg=TulaneGreen}
+\setbeamercolor{block title}{fg=white,bg=TulaneBlue}
+\setbeamercolor{block body}{fg=black,bg=white}
+\setbeamercolor{block title alerted}{fg=white,bg=TulaneGreen}
+\setbeamercolor{block body alerted}{fg=black,bg=TulaneGreen!10}
+\setbeamercolor{itemize item}{fg=TulaneKelly}
+\setbeamercolor{itemize subitem}{fg=TulaneKelly}
+\setbeamercolor{enumerate item}{fg=TulaneKelly}
+\setbeamertemplate{navigation symbols}{}
+
+% ===========================
+% Safe image inclusion
+% ===========================
+\newcommand{\safeincludegraphics}[2][]{%
+  \IfFileExists{#2}{\includegraphics[#1]{#2}}{%
+    \fbox{\parbox[c][0.08\textheight][c]{0.90\linewidth}{\centering\large Missing: \texttt{#2}}}%
+  }%
+}
+\newcommand{\fitgraphic}[2]{%
+  \safeincludegraphics[width=\linewidth,height=#2,keepaspectratio]{#1}%
+}
+
+\title{PokeAgent}
+\author{Arzaan Singh}
+\institute{Tulane University}
+
+% ===========================
+% Headline
+% ===========================
+\setbeamertemplate{headline}{%
+  \begin{beamercolorbox}[
+    wd=\paperwidth,
+    ht=3.4cm,
+    dp=0.4cm,
+    leftskip=1.6cm,
+    rightskip=1.6cm,
+    vmode
+  ]{headline}
+    \vfill
+    \begin{columns}[c,totalwidth=\paperwidth]
+      \begin{column}{0.82\paperwidth}
+        {\fontsize{48}{54}\selectfont\bfseries
+         PokeAgent: Skip the Tall Grass --- When Heuristics Beat Exploration \enspace$\cdot$\enspace
+         Arzaan Singh \enspace$\cdot$\enspace CMPS 4020\par}
+      \end{column}
+      \begin{column}{0.16\paperwidth}
+        \raggedleft
+        \vspace*{0cm}
+        \IfFileExists{tulane_logo.png}{%
+          \includegraphics[height=2.75cm]{tulane_logo.png}%
+        }{}
+      \end{column}
+    \end{columns}
+    \vfill
+  \end{beamercolorbox}
+  \vspace{0.08cm}
+}
+
+% ===========================
+% Footline
+% ===========================
+\setbeamertemplate{footline}{%
+  \begin{beamercolorbox}[wd=\paperwidth,ht=1.6cm,dp=0.5cm,leftskip=1.6cm,rightskip=1.6cm]{footline}
+    \large
+    \textbf{Advisor:} Dr.\ Zizhan Zheng
+    \hfill
+    \textbf{Tulane University} --- School of Science \& Engineering
+    \hfill
+    \textbf{GitHub:} \texttt{github.com/arzaansingh/poke\_rl}
+  \end{beamercolorbox}
+}
+
+\begin{document}
+\begin{frame}[t]{}
+
+% =========================================================
+% ROW 1
+% =========================================================
+\begin{columns}[t,totalwidth=\textwidth]
+
+% ─────────────────────────────────────────────────────────
+% COLUMN 1: Problem + MDP
+% ─────────────────────────────────────────────────────────
+\begin{column}{0.31\textwidth}
+
+\begin{block}{Problem \& Motivation}
+Pok\'{e}mon battles are stochastic, partially observable control
+problems: 6v6 teams, hundreds of moves, hidden opponent information,
+and adversarial play over 20--100 turns. This complexity makes them an
+ideal testbed for reinforcement learning.
+
+\vspace{0.12cm}
+\centering
+\fitgraphic{showdown_battle-2.png}{0.265\textheight}\\[0.08cm]
+{\small\textit{Pok\'{e}mon Showdown Battle Interface}}
+\vspace{0.1cm}
+
+\flushleft
+\textbf{Challenge:} Up to 4~moves and 5~switches per turn, hundreds
+of species, and compound effects produce a
+state-action space with \textbf{trillions} of entries. Tabular RL suffers from:
+\begin{itemize}
+  \item \textbf{Cold start:} $Q=0$ makes every action look equal and the
+        agent explores randomly regardless of action potential
+  \item \textbf{State sparsity:} most states are visited once; learned
+        values never converge
+\end{itemize}
+\end{block}
+
+
+\begin{block}{MDP Formulation}
+
+We model Pok\'{e}mon battling as an MDP
+$\langle \mathcal{S},\; \mathcal{A},\; P,\; R,\; \gamma,\; T \rangle$ where
+$\mathcal{S}$ is the discretized battle state,
+$\mathcal{A}$ the legal actions,
+$P(s'\!\mid\!s,a)$ the (hidden) transition dynamics,
+$R(s,a,s')$ a shaped reward signal,
+$\gamma$ the discount factor, and $T$ the terminal state.
+
+\vspace{0.12cm}
+\centering
+\fitgraphic{mdp_diagram.png}{0.25\textheight}\\[0.06cm]
+{\small\textit{Agent--Environment loop}}
+\vspace{0.08cm}
+
+\fitgraphic{mdp_decomposition.png}{0.14\textheight}\\[0.06cm]
+{\small\textit{State-action decomposition}}
+\vspace{0.12cm}
+
+\flushleft
+\textbf{State $\mathcal{S}$:} 20--35 discretized features---species
+hash, HP~bucket (Low/Mid/High), status, type, stat boosts, speed
+comparison, entry hazards
+
+\textbf{Actions $\mathcal{A}$:} Move~1--4
+\enspace\textbar\enspace Switch to bench Pok\'{e}mon
+
+\textbf{Reward $R$:}
+\vspace{-0.1cm}
+\[
+  R_t = \mathds{1}_{\{t = T\}} \cdot (\pm 1) + 0.1\,\Delta_{\text{faint}} + 0.05\,\Delta_{\text{HP}} + 0.01\,\Delta_{\text{status}}
+\]
+
+
+\end{block}
+
+\end{column}
+
+% ─────────────────────────────────────────────────────────
+% COLUMN 2: Q-Learning + Key Contributions + Smart Init + Hierarchical Arch + Experiment
+% ─────────────────────────────────────────────────────────
+\begin{column}{0.36\textwidth}
+
+\begin{block}{Learning: Watkins $Q(\lambda)$}
+\textbf{Q-value update} with eligibility traces:
+\[
+Q(s,a) \;\leftarrow\; Q(s,a) \;+\; \alpha\;\delta_t\; e_t(s,a)
+\]
+\[
+\delta_t \;=\; r_t + \gamma \max_{a'}Q(s',a') - Q(s_t,a_t)
+\]
+
+Traces accumulate along greedy sequences and are
+\textbf{cut to zero on exploratory actions} (Watkins' cut),
+preserving off-policy correctness:
+\[
+e_t(s,a) = \begin{cases}
+  \gamma\lambda\, e_{t\text{-}1}(s,a)
+    + \mathbb{1}_{(s,a)=(s_t,a_t)}
+    & \text{greedy} \\[4pt]
+  0 & \text{exploratory}
+\end{cases}
+\]
+
+\textbf{Storage:}
+Python \texttt{dict}\;\{(state\_tuple, action\_hash) $\to$ $Q$\}
+\end{block}
+
+\begin{alertblock}{Key Contributions}
+\begin{itemize}
+  \item \textbf{Heuristic initialization} seeds Q-values with domain
+        knowledge, eliminating cold start ($+$465\% for flat models)
+  \item \textbf{Hierarchical decomposition} reduces branching factor
+        from ${\sim}$10 to ${\sim}$5 per layer with 4$\times$ smaller tables
+  \item \textbf{Interaction discovery:} smart init changes the optimal
+        exploration schedule---fixed $\epsilon$ outperforms decay
+  \item \textbf{640-experiment factorial study} isolating each factor
+\end{itemize}
+\end{alertblock}
+
+\begin{block}{Innovation 1: Heuristic Smart Initialization}
+Instead of $Q_0(s,a)=0$ for all state-action pairs, we seed
+new entries with a \textbf{tiny directional bias} from domain
+heuristics.
+
+\vspace{0.12cm}
+\centering
+\fitgraphic{smart_init_diagram.png}{0.14\textheight}\\[0.06cm]
+
+\flushleft
+\textbf{How it works:}
+\begin{enumerate}
+  \item Compute a raw heuristic score for each available action:
+    \begin{itemize}
+      \item \textbf{Moves:} type effectiveness $\times$ STAB $\times$
+            base power $\times$ accuracy
+      \item \textbf{Switches:} type matchup vs.\ opponent $\times$
+            speed tier $\times$ HP fraction
+    \end{itemize}
+  \item Linearly normalize all scores into
+        $[\text{-}0.01,\;{+}0.01]$:
+\end{enumerate}
+\[
+Q_0(s,a) \;=\; -0.01
+  + \frac{\text{score}(a) - \min}{\max - \min} \times 0.02
+\]
+
+\textbf{Why this range?}
+A single reward signal (${\ge}0.01$) can override the initialization
+after \emph{one visit}. The agent gets a head start on action ranking
+without being locked into heuristic play.
+
+\textbf{V4 insight:} softmax normalization to $[0,\,1]$ was too
+aggressive and \emph{hurt} hierarchical models. The gentle
+$[\text{-}0.01,\,{+}0.01]$ range lets learning dominate after one visit.
+\end{block}
+
+\begin{block}{Innovation 2: Hierarchical Action Decomposition}
+\centering
+\fitgraphic{architecture_diagram.png}{0.18\textheight}\\[0.06cm]
+
+\flushleft
+\textbf{Master agent}
+(20-tuple state $\to$ \{Move~1--4, \textsc{Switch}\}):
+\begin{itemize}
+  \item Encodes active matchup: species, HP, status, ability,
+        boosts, speed
+  \item Decides \emph{whether} to switch---not \emph{whom}
+\end{itemize}
+
+\textbf{Sub-agent}
+(17-tuple state $\to$ \{bench Pok\'{e}mon\}):
+\begin{itemize}
+  \item Evaluates each candidate against opponent context
+  \item Shares switching knowledge across \emph{all} battle states
+  \item Result: \textbf{4$\times$ smaller Q-tables} with
+        \textbf{better performance}
+\end{itemize}
+\end{block}
+
+\begin{block}{Research Experiment: $2 \times 2 \times 2$ Factorial}
+We isolate three design decisions in a controlled factorial design:
+
+\vspace{0.1cm}
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Factor} & \textbf{Level 0} & \textbf{Level 1} \\
+\midrule
+Architecture & Flat (35-dim state) & Hierarchical (20 + 17-dim) \\
+Initialization & Zero ($Q{=}0$) & Smart ($Q \in [\text{-}.01,\,{+}.01]$) \\
+Exploration & Decay ($1.0 {\to} 0.05$) & Fixed ($\epsilon {=} 0.05$) \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.08cm}
+\flushleft
+$\boldsymbol{8}$~\textbf{models}
+$\times$ $\boldsymbol{8}$~\textbf{HP combos}
+($2\alpha \!\times\! 2\gamma \!\times\! 2\lambda$)
+$\times$ $\boldsymbol{10}$~\textbf{runs}
+$\times$ $\boldsymbol{50{,}000}$~\textbf{battles}
+= \textbf{640 experiments} (32\,M total battles).
+\end{block}
+
+\end{column}
+
+% ─────────────────────────────────────────────────────────
+% COLUMN 3: Results
+% ─────────────────────────────────────────────────────────
+\begin{column}{0.31\textwidth}
+
+\begin{alertblock}{Results: Performance Heatmap}
+\centering
+\fitgraphic{heatmap_rollingwin.png}{0.20\textheight}\\[0.06cm]
+{\small Mean final win rate (\%) across 10 runs.
+ \textbf{Hier+Smart+Fixed\,$\boldsymbol{\epsilon}$ wins every HP combo.}}
+\end{alertblock}
+
+\begin{block}{Best Configuration:
+  $\alpha\!=\!0.1,\;\gamma\!=\!0.99,\;\lambda\!=\!0.7$}
+\centering
+\begin{columns}[c]
+  \begin{column}{0.48\linewidth}
+    \centering
+    \fitgraphic{hp_001_box_violin.png}{0.13\textheight}\\[0.04cm]
+    {\scriptsize Win rate distributions (10 runs)}
+  \end{column}
+  \begin{column}{0.48\linewidth}
+    \centering
+    \fitgraphic{hp_001_interaction.png}{0.13\textheight}\\[0.04cm]
+    {\scriptsize Architecture $\times$ Init interaction}
+  \end{column}
+\end{columns}
+
+\vspace{0.12cm}
+
+\fitgraphic{hp_001_rollingwin.png}{0.13\textheight}\\[0.04cm]
+{\small Learning curves: Hier+Smart+Fixed\,$\epsilon$ starts
+ competitive from battle~1, reaches \textbf{59.8\%} WR}
+\end{block}
+
+\begin{block}{Factor Effect Sizes}
+\centering
+\begin{tabular}{lrc}
+\toprule
+\textbf{Factor} & \textbf{Effect} & \textbf{Rel.\ Gain} \\
+\midrule
+Smart Init (Flat arch) & $+38.5$~pp & $+465\%$ \\
+Smart Init (Hier arch) & $+9.6$~pp & $+25\%$ \\
+Hierarchy (w/ Smart) & $+2.0$~pp & $+4\%$ \\
+Fixed $\epsilon$ (Hier+Smart) & $+1.4$~pp & $+3\%$ \\
+\midrule
+$\lambda\!=\!0.7$ vs $0.9$ & $+8.5$~pp & --- \\
+$\alpha\!=\!0.1$ vs $0.2$ & $+4.9$~pp & --- \\
+$\gamma\!=\!0.99$ vs $0.999$ & $<\!1$~pp & n.s. \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.1cm}
+\flushleft
+{\small Smart initialization is the \textbf{single most impactful
+factor}. Trace decay ($\lambda$) is the most sensitive
+hyperparameter.}
+\end{block}
+
+\begin{block}{Limitations \& Future Work}
+\textbf{Limitations:} evaluation vs.\ random opponent only;
+Gen~4 OU specific; tabular (no function approximation);
+50K battle budget.
+
+\textbf{Future:} DQN for generalization; multi-opponent
+curriculum; cross-generation transfer; longer training.
+\end{block}
+
+\end{column}
+\end{columns}
+
+\vfill
+
+\end{frame}
+\end{document}

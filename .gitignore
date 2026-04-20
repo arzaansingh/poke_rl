@@ -1,29 +1,29 @@
-# Binary models (large pickle files)
+# ─── Binary models (large Q-table pickles — regenerable from training) ───
 *.pkl
+*.pkl.tmp
 
-# Python cache
+# ─── Python cache ───
 __pycache__/
 *.pyc
 *.pyo
 
-# Training outputs (generated at runtime)
-grid_results/
-plots/
-stdout_logs/
+# ─── Runtime-only logs (verbose, replaceable, not analysis data) ───
+# CSVs, JSON configs, and plots are KEPT — those are the research artifacts.
 *.log
+train_stdout.log
 live_status*.json
+showdown_logs/
+stdout_logs/
 
-# OS files
+# ─── OS + IDE ───
 .DS_Store
-
-# IDE
 .vscode/
 .idea/
 
-# Pokemon Showdown (external dependency)
+# ─── External dependencies / separate projects ───
 pokemon-showdown/
 
-# Old experiment versions (not part of research)
+# ─── Pre-research iterative code (not part of the V1-V6 research line) ───
 v13_hq_dense_g1/
 v15/
 v16/
@@ -34,7 +34,22 @@ v17gen4/
 v18gen4/
 backup/
 
-# Misc
+# ─── Personal/misc ───
 Terminal Saved Output.txt
 dpp_ou_teams.txt
 .claude/
+
+# ─── Node / React build artifacts (poster-visuals React app) ───
+node_modules/
+dist/
+build/
+.vite/
+*.tsbuildinfo
+
+# ─── LaTeX build artifacts (keep .tex + figures, drop compile byproducts) ───
+*.aux
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.toc
+*.out

@@ -1,0 +1,2 @@
+combo_id,alpha,gamma,lam,final_Flat_ZeroInit,best_Flat_ZeroInit,final_Flat_SmartInit,best_Flat_SmartInit,final_Hier_ZeroInit,best_Hier_ZeroInit,final_Hier_SmartInit,best_Hier_SmartInit,runs_done,avg_final,avg_best
+hp_001,0.05,0.9,0.5,0.05600000000000001,0.126,0.40199999999999997,0.502,0.406,0.514,0.43599999999999994,0.522,0,0.325,0.41600000000000004

@@ -218,7 +218,7 @@ class HierZeroPlayer(Player):
         tmp = path + ".tmp"
         try:
             with open(tmp, 'wb') as f:
-                pickle.dump({'q': self.q_table, 'switch': self.switch_table}, f, protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump({'q': dict(self.q_table), 'switch': dict(self.switch_table)}, f, protocol=pickle.HIGHEST_PROTOCOL)
             os.replace(tmp, path)
         except Exception as e:
             print(f"Save error: {e}")
