@@ -1,0 +1,84 @@
+% V6 Paper — Ensemble Tabular Q-Learning for Pokemon Battling
+% Author: Arzaan Singh, Tulane University
+% Advisor: Dr. Zizhan Zheng
+%
+% Build: pdflatex main && bibtex main && pdflatex main && pdflatex main
+% Or with latexmk: latexmk -pdf main
+%
+% NOTE: Download neurips_2024.sty from https://neurips.cc/Conferences/2024/PaperInformation/StyleFiles
+% and place it in this directory before compiling.
+
+\documentclass{article}
+
+% NeurIPS style file (uncomment after placing neurips_2024.sty in this dir)
+% Use [final] for camera-ready, [preprint] for arXiv preprint
+\usepackage[preprint]{neurips_2024}
+
+% Standard math + graphics packages
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}        % Professional tables
+\usepackage{siunitx}         % Aligned numbers in tables
+\usepackage{microtype}       % Better justification
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{xcolor}
+\usepackage{hyperref}        % Last before cleveref
+\usepackage[capitalize,noabbrev]{cleveref}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+% Color setup matching the figure palette (Tulane green primary)
+\definecolor{tulanegreen}{HTML}{006747}
+\definecolor{tulaneblue}{HTML}{418FDE}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=tulanegreen,
+  citecolor=tulanegreen,
+  urlcolor=tulaneblue,
+}
+
+% Title
+\title{Ensembling Tabular Q-Learning Agents for Competitive Pokemon\\
+  A Read-Only Inference Method with Heuristic-Prior Fallback}
+
+% Authors
+\author{
+  Arzaan Singh \\
+  Department of Computer Science \\
+  Tulane University \\
+  New Orleans, LA \\
+  \texttt{singharzaan@gmail.com} \\
+  \And
+  Zizhan Zheng \\
+  Department of Computer Science \\
+  Tulane University \\
+  New Orleans, LA \\
+  \texttt{zzheng3@tulane.edu}
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\input{sections/abstract}
+\end{abstract}
+
+\input{sections/introduction}
+\input{sections/related_work}
+\input{sections/method}
+\input{sections/experimental_setup}
+\input{sections/results}
+\input{sections/discussion}
+\input{sections/conclusion}
+
+% Bibliography
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+% Appendix
+\appendix
+\input{sections/appendix}
+
+\end{document}

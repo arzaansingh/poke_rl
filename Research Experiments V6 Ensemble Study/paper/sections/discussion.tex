@@ -1,0 +1,34 @@
+% Section 6: Discussion (~1 page, ~900 words)
+
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Why the ensemble works in this regime}
+\label{sec:d_why_works}
+
+% Variance reduction from uncorrelated stochastic exploration paths; voting averages out idiosyncratic errors
+
+\subsection{Why ensembling beats more single-agent compute}
+\label{sec:d_why_beats}
+
+% Diminishing returns + state-space coverage; 30M battles across K=10 agents covers more of the
+% state distribution than 5M battles in a single agent.
+
+\subsection{Comparison to deep RL}
+\label{sec:d_vs_deep}
+
+% Concede: Wang 2024, Metamon outperform V6, but at 10^2 -- 10^4x more compute.
+% V6 is a Pareto point on the compute/performance curve, not the absolute peak.
+
+\subsection{Avoiding the Curse of Diversity}
+\label{sec:d_curse}
+
+% Lin et al. 2024 documented that shared-buffer ensembles' members underperform single-agent baselines.
+% V6 trains independent rollouts with independent Q-tables -- failure mode does not apply by construction.
+
+\subsection{Limitations}
+\label{sec:d_limitations}
+
+% Single opponent (SimpleHeuristicsPlayer), single 20-Pokemon pool, no test-time pool/opponent generalization
+% Tabular only; no deep-RL ablation
+% K capped at 10 in evaluation due to memory; the K=30 training budget was conservative

@@ -1,0 +1,127 @@
+% Section 3: Background and Method (~1.5 pages, ~1500 words)
+% Write FIRST. This defines the technical contribution; everything else flows from it.
+
+\section{Background and Method}
+\label{sec:method}
+
+\subsection{Preliminaries}
+\label{sec:prelim}
+
+% Define MDP/POMDP notation, Watkins Q(lambda), Pokemon Showdown as POMDP,
+% hierarchical action decomposition (20-tuple master state, 17-tuple sub-state),
+% heuristic prior h(s, a).
+
+We model a Pokemon battle as a partially observable Markov decision process (POMDP)
+$(\mathcal{S}, \mathcal{A}, P, r, \gamma, \Omega)$ where $\mathcal{S}$ is the set of
+joint game states, $\mathcal{A}$ is the player's action set (move 1 through 4, plus a
+switch action), $P$ is a stochastic transition function determined by the Showdown
+simulator, $r$ is the dense reward (HP delta, faint delta, terminal $\pm 1$),
+$\gamma$ is the discount factor, and $\Omega : \mathcal{S} \to \mathcal{O}$ is the
+observation function that hides opponent team information.
+
+We train each member with Watkins $Q(\lambda)$ \citep{watkins1989, sutton2018}:
+\begin{align}
+  \delta_t       &= r_{t+1} + \gamma \max_{a'} Q(s_{t+1}, a') - Q(s_t, a_t) \\
+  e_t(s, a)      &= \begin{cases} 1, & (s, a) = (s_t, a_t) \\
+                                  \gamma \lambda \, e_{t-1}(s, a), & a_t = \arg\max_{a'} Q(s_t, a') \\
+                                  0, & \text{otherwise} \end{cases} \\
+  Q(s, a)        &\leftarrow Q(s, a) + \alpha \delta_t \, e_t(s, a)
+\end{align}
+with replacing traces and the trace cleared after non-greedy exploration.
+
+% Hierarchical decomposition (from V5)
+We adopt the hierarchical action decomposition introduced in our prior work
+\citep{singh2026v5}: a \emph{master} agent observes a 20-tuple state and chooses
+between attacking (one of four moves) and switching; if it chooses to switch,
+a \emph{sub-agent} observes a 17-tuple state and selects which Pokemon to switch to.
+Both agents are trained jointly via the shared reward signal. We use the master's
+Q-table $Q^{\text{m}}$ and the sub-agent's Q-table $Q^{\text{s}}$ throughout.
+
+% Heuristic prior h(s, a)
+For unseen state-action pairs at inference time, we use the same domain heuristic
+$h(s, a)$ that V5 used to ``smart-initialize'' the Q-tables: it is a deterministic
+function of the battle state, combining type effectiveness, STAB, move power, and
+accuracy. Crucially, $h(s, a)$ depends only on $s$ and the action's type signature,
+not on any trained Q-table.
+
+\subsection{The ensemble inference rule}
+\label{sec:method_inference}
+
+% This is the technical contribution. State formally.
+% Define: Q-matrix at decision time, three combination rules, read-only property.
+
+Given $K$ trained Q-tables $\{Q^k_{\text{m}}, Q^k_{\text{s}}\}_{k=1}^K$, we choose
+the agent's action at state $s$ as follows.
+
+\paragraph{Action enumeration.}
+Following the master/sub-agent decomposition, we first enumerate the possible
+\emph{master} actions $\mathcal{A}_{\text{m}}(s)$ available at state $s$
+(legal moves of the active Pokemon, plus a switch action when force-switch is not
+required). We then construct the \emph{Q-matrix} $\mathbf{Q} \in \mathbb{R}^{K \times |\mathcal{A}_{\text{m}}|}$
+whose entry $\mathbf{Q}_{k, a}$ is the master Q-value of action $a$ at state $s$ under
+member $k$, with heuristic fallback for unseen entries:
+\begin{equation}
+  \mathbf{Q}_{k, a} := \begin{cases}
+    Q^k_{\text{m}}(s, a), & \text{if } (s, a) \in \text{dom}(Q^k_{\text{m}}) \\
+    h(s, a),              & \text{otherwise.}
+  \end{cases}
+  \label{eq:q_matrix}
+\end{equation}
+
+\paragraph{Combination rules.}
+We compare three rules for combining the $K$ rows of $\mathbf{Q}$ into a single
+chosen action $a^* \in \mathcal{A}_{\text{m}}$.
+
+\textbf{Soft voting} averages Q-values column-wise and picks the argmax:
+\begin{equation}
+  a^*_{\text{soft}} = \arg\max_{a} \frac{1}{K} \sum_{k=1}^K \mathbf{Q}_{k, a}.
+\end{equation}
+
+\textbf{Hard voting} (plurality) lets each member vote for its preferred action:
+\begin{equation}
+  a^*_{\text{hard}} = \arg\max_{a} \big|\{ k : a = \arg\max_{a'} \mathbf{Q}_{k, a'}\}\big|,
+\end{equation}
+with ties broken by mean Q across members.
+
+\textbf{Confidence-weighted voting} assigns each member a weight equal to the gap
+between its top Q-value and its row mean:
+\begin{align}
+  w_k &:= \max\!\left( \max_a \mathbf{Q}_{k, a} - \tfrac{1}{|\mathcal{A}_{\text{m}}|} \sum_a \mathbf{Q}_{k, a},\ 0 \right), \\
+  a^*_{\text{conf}} &:= \arg\max_{a} \frac{\sum_k w_k \mathbf{Q}_{k, a}}{\sum_k w_k}.
+\end{align}
+When $\sum_k w_k = 0$, we fall back to soft voting.
+
+\paragraph{Recursion into the sub-agent.}
+If the chosen master action is \emph{switch}, we repeat the same procedure on the
+sub-agent Q-tables $\{Q^k_{\text{s}}\}_{k=1}^K$ over the available switch candidates.
+
+% Key property
+\paragraph{Read-only property.}
+None of the three rules modifies any entry of $\{Q^k_{\text{m}}, Q^k_{\text{s}}\}$.
+This is a deliberate design choice: a previous implementation cached unseen-entry
+fallbacks into each $Q^k$ to avoid recomputing the heuristic, but this caused
+the dictionaries to grow at rate $O(\text{unique states per battle} \times K)$,
+exceeding memory in a 100{,}000-battle evaluation by the 30{,}000-battle mark.
+Our read-only formulation keeps the inference memory footprint at $O(1)$ per
+battle and admits the longer evaluations our experiments require.
+
+\subsection{Training the ensemble members}
+\label{sec:method_training}
+
+% K = 30, seeded by base_seed + k
+% Hyperparameters: alpha=0.1, gamma=0.99, lambda=0.7, eps=0.05 fixed
+% 20-Pokemon pool, gen4ou format, IndexedTeambuilder (deterministic teams per battle)
+% 1M battles per agent, parallelism
+
+Each of $K = 30$ members is trained independently with seed $\text{seed}_k = s_0 + k$,
+$\alpha = 0.1$, $\gamma = 0.99$, $\lambda = 0.7$, and a fixed exploration rate
+$\varepsilon = 0.05$. Members observe and learn from a fixed 20-Pokemon OU pool from
+which the IndexedTeambuilder constructs deterministic teams indexed by battle number
+(so battle $N$ produces the same matchup across members). Each member trains for
+$1{,}000{,}000$ battles, for a total of $30{,}000{,}000$ training battles across the
+ensemble. Training is parallelized across eight AWS EC2 c5.4xlarge instances over
+fifteen days.
+
+% Reproducibility note: the entire pipeline is on GitHub.
+The training pipeline and trained checkpoints are released at
+\url{https://github.com/arzaansingh/poke_rl}.

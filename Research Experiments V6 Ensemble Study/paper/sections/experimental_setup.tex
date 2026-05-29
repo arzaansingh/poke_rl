@@ -1,0 +1,43 @@
+% Section 4: Experimental Setup (~0.5 page, ~400 words)
+
+\section{Experimental Setup}
+\label{sec:experiments}
+
+\subsection{Environment}
+\label{sec:env}
+
+% poke-env wrapper over Pokemon Showdown, gen4ou format, IndexedTeambuilder
+
+\subsection{Evaluation conditions}
+\label{sec:eval_conditions}
+
+We evaluate the ensemble in eight conditions:
+
+\begin{itemize}
+  \item \textbf{Voting strategies at $K=10$}: SOFT, HARD, CONFIDENCE, each vs SimpleHeuristicsPlayer.
+  \item \textbf{K-saturation curve at SOFT}: $K \in \{1, 3, 5, 10\}$ vs SimpleHeuristicsPlayer.
+  \item \textbf{Head-to-head}: $K=10$ SOFT ensemble vs baseline\_5m (the compute-matched single agent).
+  \item \textbf{Baseline solo}: baseline\_5m solo vs SimpleHeuristicsPlayer.
+\end{itemize}
+
+\subsection{Evaluation protocol}
+\label{sec:eval_protocol}
+
+% 100,000 battles per condition, Wilson CIs, hardware
+Each condition is evaluated over $N = 100{,}000$ battles. Win rates are reported with
+Wilson 95\% confidence intervals \citep{wilson1927}. Differences in proportions use the
+normal approximation to the difference of independent binomials. All hardware specs and
+elapsed wall-clock times are tabulated in \cref{app:reproducibility}.
+
+\subsection{Baseline opponents}
+\label{sec:baselines}
+
+% SimpleHeuristicsPlayer, baseline_5m
+\textbf{SimpleHeuristicsPlayer} is poke-env's reference heuristic agent
+\citep{sahovic2020pokeenv}. It selects damaging moves by expected damage and
+switches when type-disadvantaged. It is the standard baseline used by
+\citet{wang2024mit}, \citet{grigsby2025metamon}, and \citet{vgcbench2025}.
+
+\textbf{baseline\_5m} is a single HierSmartPlayer trained for $5{,}000{,}000$
+battles ($5\times$ each ensemble member's budget) under identical hyperparameters,
+hardware, and pool. It is the compute-matched single-agent control.

@@ -1,0 +1,31 @@
+% Section 2: Related Work (~1 page, ~750 words)
+% Three subsections, ~250 words each.
+% Use the lit review from the agent research; pull citations from references.bib.
+
+\section{Related Work}
+\label{sec:related_work}
+
+\subsection{Ensemble methods in tabular reinforcement learning}
+\label{sec:rw_tabular}
+
+TODO. Cite: \citet{wiering2008}, \citet{fausser2011}, \citet{lan2020maxmin}, \citet{peer2021ebql}.
+Note algorithmic vs seed-only diversity; note none of these address stochastic 2-player games.
+
+\subsection{Ensemble methods in deep reinforcement learning}
+\label{sec:rw_deep}
+
+TODO. Cite: \citet{osband2016bootstrapped}, \citet{anschel2017avgdqn}, \citet{chen2021redq},
+\citet{lee2021sunrise}, \citet{lin2024curse}.
+
+Closing sentence: \citet{lin2024curse}'s ``Curse of Diversity'' failure mode requires shared
+replay buffers; our independent-table setup avoids it by construction.
+
+\subsection{Reinforcement learning for Pokemon}
+\label{sec:rw_pokemon}
+
+TODO. Cite in order: \citet{lee2017showdown}, \citet{kalose2018}, \citet{sahovic2020pokeenv},
+\citet{simoes2020}, \citet{wang2024mit}, \citet{hu2024pokellmon}, \citet{karten2025pokechamp},
+\citet{grigsby2025metamon}, \citet{vgcbench2025}.
+
+Closing sentence: To our knowledge, no prior paper trains K independent tabular Q-function agents
+and combines them by action-time voting on Pokemon battles.

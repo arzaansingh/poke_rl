@@ -1,0 +1,50 @@
+% Section 5: Results (~2 pages, ~2000 words)
+
+\section{Results}
+\label{sec:results}
+
+% Lead with the headline. Reader should know the main finding from the first sentence.
+
+\subsection{Ensemble beats compute-matched single agent}
+\label{sec:r_headline}
+
+The headline result is \cref{fig:headline}. The $K=10$ soft-voting ensemble achieves
+\textbf{66.8\% $\pm$ 0.3\%} win rate against SimpleHeuristicsPlayer over $100{,}000$
+battles. The compute-matched single agent (baseline\_5m, trained for $5\times$ longer)
+achieves only \textbf{54.2\% $\pm$ 0.3\%}, a lift of $+12.6$ percentage points
+($z = 62$, $p < 0.001$). In direct head-to-head play, the ensemble wins
+\textbf{59.7\%} of $100{,}000$ matches against the same single agent
+($z = 61$ above coin flip).
+
+% Figure 1: headline_comparison.png
+
+\subsection{K-saturation curve}
+\label{sec:r_ksat}
+
+% K=1: 55.9%; K=3: 62.7%; K=5: 65.1%; K=10: 66.8%
+% Matches Osband 2016 saturating shape; most of the gain by K=5
+% Figure 2: k_saturation_curve.png
+
+\subsection{Voting strategy comparison}
+\label{sec:r_voting}
+
+% SOFT 66.8%, HARD 65.6%, CONFIDENCE 67.6% — all within 2pp
+% Hard underperforms (loses Q-magnitude information)
+% Confidence and soft tied within noise
+% Figure 3: strategy_comparison.png
+
+\subsection{Per-member diagnostics}
+\label{sec:r_diag}
+
+% Per-member solo WRs (weak-learner framing)
+% Pairwise disagreement at K=10: proves diversity preserved (not collapsed)
+% Unseen-state fallback rate: quantifies how often heuristic fires
+% Figure 4: per_member_final_bar.png + diagnostics.png
+
+\subsection{Comparison to prior work}
+\label{sec:r_priorwork}
+
+% Table 1: V6 at 66.8% in gen4OU compared to Wang 2024 (85-91% in gen4 randombattle, format caveat),
+% Metamon (64-80% in gen1-4 OU, 200M param transformer), PokeLLMon (26%), Lee & Togelius (63% vs Random),
+% Kalose (70% vs Random)
+% Frame: V6 inside Metamon band at orders-of-magnitude less compute, well above all prior tabular work

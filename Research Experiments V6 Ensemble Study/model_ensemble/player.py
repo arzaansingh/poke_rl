@@ -68,6 +68,13 @@ def _switch_hash(species: str) -> int:
 # MemberQTable: lightweight container for one trained member's tables.
 # ──────────────────────────────────────────────────────────────────────
 
+# Module-level cache so MemberQTable.load(path) returns the same instance
+# the second time it's called for the same path. Lets multiple EnsemblePlayer
+# instances (e.g., one per eval in a multi-eval suite) share Q-tables in
+# memory instead of reloading the same multi-GB pkl from disk repeatedly.
+_QTABLE_CACHE: dict = {}
+
+
 class MemberQTable:
     """Holds (q_table, switch_table) from one trained ensemble member.
 
@@ -83,6 +90,9 @@ class MemberQTable:
 
     @classmethod
     def load(cls, path: str) -> "MemberQTable":
+        cached = _QTABLE_CACHE.get(path)
+        if cached is not None:
+            return cached
         gc.disable()
         try:
             with open(path, "rb") as f:
@@ -92,7 +102,9 @@ class MemberQTable:
         finally:
             gc.enable()
         logging.info(f"[EnsemblePlayer] loaded {path}  Q={len(q)}  Switch={len(s)}")
-        return cls(q_table=q, switch_table=s, path=path)
+        instance = cls(q_table=q, switch_table=s, path=path)
+        _QTABLE_CACHE[path] = instance
+        return instance
 
     def get_q(self, state_key, action_hash) -> float:
         return self.q_table.get((state_key, action_hash), 0.0)
@@ -163,17 +175,30 @@ class EnsemblePlayer(Player):
         if not possible_actions:
             return self.choose_random_move(battle)
 
-        # Per-member: seed priors for any unseen (state, action) pairs and
-        # count how many members hit the heuristic fallback for this state.
-        n_unseen_members = self._seed_master_priors(battle, state_key, possible_actions)
+        # Compute heuristic priors for this state ONCE — used as a per-member
+        # fallback when a member has not seen (state, action). Crucially, we
+        # do NOT mutate any member's q_table here: writing back would grow
+        # memory unboundedly across long evals (caused OOM at ~30k battles).
+        priors_master = self._compute_master_priors(battle, possible_actions)
+
+        # Build K × |actions| Q-matrix using each member's table with
+        # heuristic-prior fallback.  Track unseen rate without mutating.
+        q_matrix = []
+        n_unseen_members = 0
+        for m in self.members:
+            row = []
+            member_was_unseen = False
+            for i, (a_hash, _) in enumerate(possible_actions):
+                v = m.q_table.get((state_key, a_hash))
+                if v is None:
+                    v = priors_master[i]
+                    member_was_unseen = True
+                row.append(v)
+            q_matrix.append(row)
+            if member_was_unseen:
+                n_unseen_members += 1
         if self.log_unseen_rate:
             self.unseen_log.append(n_unseen_members / self.K)
-
-        # Build K × |actions| Q-matrix.
-        q_matrix = [
-            [m.get_q(state_key, a_hash) for a_hash, _ in possible_actions]
-            for m in self.members
-        ]
 
         # Log pairwise disagreement (fraction of distinct argmax actions).
         if self.log_disagreement:
@@ -203,33 +228,37 @@ class EnsemblePlayer(Player):
             return self.choose_random_move(battle)
 
         sub_state = self.extractor.get_sub_state(battle)
-
-        # Seed priors per-member for unseen switches.
-        self._seed_switch_priors(battle, sub_state, candidates)
-
-        # Build K × |candidates| matrix of switch-Q values.
         switch_hashes = [_switch_hash(mon.species) for mon in candidates]
-        q_matrix = [
-            [m.get_switch(sub_state, h) for h in switch_hashes]
-            for m in self.members
-        ]
+
+        # Compute switch priors ONCE; use as per-member fallback. Do NOT
+        # mutate switch_table — same reasoning as choose_move.
+        priors_switch = self._compute_switch_priors(battle, candidates)
+        q_matrix = []
+        for m in self.members:
+            row = []
+            for i, h in enumerate(switch_hashes):
+                v = m.switch_table.get((sub_state, h))
+                if v is None:
+                    v = priors_switch[i]
+                row.append(v)
+            q_matrix.append(row)
 
         chosen_idx = self._combine_master(q_matrix)   # same combination rule
         return self.create_order(candidates[chosen_idx])
 
     # ────────────────────────────────────────────────────────────────
-    # Per-member prior seeding (generalized optimistic init)
+    # Heuristic priors (computed per state, used as per-member fallback)
+    #
+    # Read-only: never mutate any member's q_table or switch_table. Mutating
+    # would grow memory unboundedly across long evals (O(unique_states ×
+    # actions × K_members) extra dict entries beyond the trained tables).
     # ────────────────────────────────────────────────────────────────
 
-    def _seed_master_priors(self, battle, state_key, possible_actions) -> int:
-        """For each member, fill in any missing (state, action) Q-values with
-        heuristic priors.  Returns number of members that hit the fallback
-        (i.e. had at least one missing action for this state)."""
+    def _compute_master_priors(self, battle, possible_actions):
+        """Return a list of heuristic priors aligned with possible_actions.
+        Pure function of battle state — same formula V5 used at init."""
         active = battle.active_pokemon
         opponent = battle.opponent_active_pokemon
-
-        # Compute raw heuristic scores ONCE — they don't depend on which
-        # member we're seeding (same formula, same battle state).
         raw_scores = []
         for action_hash, move_obj in possible_actions:
             if action_hash == -1:
@@ -237,38 +266,16 @@ class EnsemblePlayer(Player):
             else:
                 score = HeuristicEngine.get_move_score(battle, move_obj, active, opponent)
             raw_scores.append(score)
-        priors = HeuristicEngine.build_q_priors(raw_scores)
+        return HeuristicEngine.build_q_priors(raw_scores)
 
-        n_unseen_members = 0
-        for m in self.members:
-            missing = False
-            for i, (a_hash, _) in enumerate(possible_actions):
-                if (state_key, a_hash) not in m.q_table:
-                    m.q_table[(state_key, a_hash)] = priors[i]
-                    missing = True
-            if missing:
-                n_unseen_members += 1
-        return n_unseen_members
-
-    def _seed_switch_priors(self, battle, sub_state, candidates) -> int:
+    def _compute_switch_priors(self, battle, candidates):
+        """Return a list of heuristic switch priors aligned with candidates."""
         opponent = battle.opponent_active_pokemon
         raw_scores = [
             HeuristicEngine.get_switch_score(battle, mon, opponent)
             for mon in candidates
         ]
-        priors = HeuristicEngine.build_q_priors(raw_scores)
-
-        n_unseen_members = 0
-        for m in self.members:
-            missing = False
-            for i, mon in enumerate(candidates):
-                key = (sub_state, _switch_hash(mon.species))
-                if key not in m.switch_table:
-                    m.switch_table[key] = priors[i]
-                    missing = True
-            if missing:
-                n_unseen_members += 1
-        return n_unseen_members
+        return HeuristicEngine.build_q_priors(raw_scores)
 
     # ────────────────────────────────────────────────────────────────
     # Combination strategies
