@@ -1,23 +1,23 @@
 # Figures Plan — V6 Paper
 
-> All figures live in `paper/figures/`. Every figure uses the unified color palette and font conventions from `GUIDELINES.md` (Section 5).
+> Paper figures live in `paper/figures/`. **Two scripts produce figures:**
 >
-> Re-generate via `python analyze_eval.py --run-id 1 --dpi 300` from the repository root.
+> - `analyze_paper_figures.py` (preferred for paper) — vector PDFs with Times serif typography matching LaTeX body. Output: `fig1_*.pdf` through `fig7_*.pdf`. Run from repo root: `python analyze_paper_figures.py`.
+> - `analyze_eval.py` (informal / poster) — 300 DPI PNGs with sans-serif. Older filenames (`headline_comparison.png`, etc.). Useful for slides and quick checks, not for the paper.
 
 ---
 
-## Figures already produced (300 DPI PNG)
+## Paper figures (all 7 produced, in `paper/figures/`, vector PDFs)
 
-| # | File | What it shows | Section | Status |
-|---|---|---|---|---|
-| 1 | `headline_comparison.png` | V5 M8 ref / V6 baseline_5m / V6 ensemble bars with +12.6pp lift annotation | §5.1 (Headline) | ✅ Ready |
-| 2 | `k_saturation_curve.png` | WR vs K with Wilson 95% CI bands; baseline_5m + V5 M8 reference lines | §5.2 (K-saturation) | ✅ Ready |
-| 3 | `strategy_comparison.png` | Soft / Hard / Confidence bars at K=10 with CIs | §5.3 (Voting) | ✅ Ready |
-| 4 | `head_to_head.png` | Stacked horizontal bar of ensemble vs baseline_5m wins (100k battles) | §5.1 (Headline) | ✅ Ready |
-| 5 | `diagnostics.png` | Pairwise disagreement + unseen-state rate panels | §5.4 (Diagnostics) | ✅ Ready |
-| 6 | `effect_lift_table.png` | Publication-quality table of all 8 conditions with Wilson CIs | §5 + Appendix | ✅ Ready (also rendered as LaTeX table in paper body) |
-| 7 | `per_member_curves.png` | 30 thin training trajectories + mean ± std band | Appendix | ✅ Ready |
-| 8 | `per_member_final_bar.png` | Bar chart of each member's final solo WR | §5.4 (Diagnostics) | ✅ Ready |
+| # | Figure file | What it shows | Section |
+|---|---|---|---|
+| 1 | `fig1_headline_comparison.pdf` | V5 M8 ref / V6 baseline_5m / V6 ensemble bars with +12.6pp lift annotation | §5.1 |
+| 2 | `fig2_k_saturation.pdf` | WR vs K ∈ {1, 3, 5, 10} with Wilson 95% CI band | §5.2 |
+| 3 | `fig3_strategy_comparison.pdf` | Hard / Soft / Confidence bars at K=10 with CIs | §5.3 |
+| 4 | `fig4_head_to_head.pdf` | Stacked horizontal bar: ensemble wins vs baseline_5m wins | §5.1 |
+| 5 | `fig5_per_member_distribution.pdf` | Violin + strip plot of K=30 final solo WRs | §5.4 |
+| 6 | `fig6_diagnostics.pdf` | Pairwise disagreement + unseen-state rate panels | §5.4 |
+| 7 | `fig7_prior_work_comparison.pdf` | V6 in context of Wang 2024, Metamon, PokeLLMon, prior tabular work | §5.5 |
 
 ## Figures to produce (TODO before submission)
 

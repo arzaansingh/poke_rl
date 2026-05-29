@@ -12,28 +12,29 @@ Working directory for the V6 ensemble Q-learning paper. Open in VS Code with the
 
 ## Build instructions
 
-### One-time setup
-
-Download the NeurIPS style file:
+### Quickest path: the build script
 
 ```bash
-curl -L -o neurips_2024.sty "https://media.neurips.cc/Conferences/NeurIPS2024/Styles/neurips_2024.sty"
+cd paper
+./build.sh            # auto-downloads neurips_2024.sty if missing, builds main.pdf
+./build.sh clean      # remove build artifacts
+./build.sh figures    # regenerate figures + build
 ```
 
-(Or grab it from the NeurIPS Author Information page if the URL above changes.)
+The script auto-downloads `neurips_2024.sty` from a GitHub mirror if it is not already present.
 
 ### In VS Code
 
-With LaTeX Workshop installed, open `main.tex` and hit Ctrl+Alt+B (or Cmd+Alt+B) to build. The default recipe will run pdflatex → bibtex → pdflatex → pdflatex.
+With the **LaTeX Workshop** extension installed, open `main.tex` and hit `Ctrl+Alt+B` (or `Cmd+Alt+B`). Default recipe runs pdflatex → bibtex → pdflatex → pdflatex. The first build also needs `neurips_2024.sty`; run `./build.sh` once to auto-download it, then VS Code builds will pick it up.
 
-### From the command line
+### From the command line directly
 
 ```bash
 cd paper
 latexmk -pdf main
 ```
 
-Output: `main.pdf`.
+Output: `main.pdf` (currently 8 pages, all 7 figures embedded, 0 warnings).
 
 ## File map
 

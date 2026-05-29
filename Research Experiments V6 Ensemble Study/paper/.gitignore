@@ -1,0 +1,19 @@
+# LaTeX build artifacts — regenerated on every build
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.nav
+*.snm
+*.vrb
+
+# Keep main.pdf — useful for reviewers without LaTeX
+# (comment out the line below if you want pdfs ignored)
+# main.pdf
