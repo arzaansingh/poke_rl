@@ -1,8 +1,9 @@
 % Section 6: Discussion (~1 page, ~900 words)
-% Scope: only discuss what the V6 results actually show. Avoid speculation
-% about deep RL variants (not run), multi-pool generalization (not run),
-% multi-opponent generalization (not run). These belong in the
-% "Limitations" subsection as honest gaps, not as imminent work.
+% Outline only — prose pass deferred until after Friday meeting.
+% The "Avoiding the Curse of Diversity" paragraph is kept as concrete
+% prose because the factual claim (independent-buffer construction =
+% immune by design) is already locked in regardless of how Section 1
+% framing shifts.
 
 \section{Discussion}
 \label{sec:discussion}
@@ -10,47 +11,63 @@
 \subsection{Why the ensemble works in this regime}
 \label{sec:d_why_works}
 
-\emph{[Prose to be written. Variance reduction across stochastic exploration paths producing uncorrelated errors; voting averages them out. Cross-reference per-member disagreement diagnostic.]}
+\guideblock{One-paragraph mechanism story. Each member's $Q$-table is
+trained from a different stochastic trajectory through the same MDP,
+so per-state action-value estimates have errors that are largely
+uncorrelated across members. Voting averages those errors out; the
+expected vote argmax converges toward the true argmax faster than any
+single member. Cross-reference the per-member disagreement diagnostic
+(Figure~\ref{fig:diag}, right) to show the diversity assumption is
+satisfied in practice, not just in theory.}
 
 \subsection{Why ensembling beats more single-agent compute}
 \label{sec:d_why_beats}
 
-\emph{[Prose to be written. The compute-matched single agent at 5M battles plateaus around 54\%; ten agents at 1M battles each cover state-space more broadly than one agent at 5M does, even though total simulated battle count is identical at 50M. Tie this to the K-saturation curve.]}
+\guideblock{One-paragraph paragraph framing the
+compute-matched comparison. \texttt{baseline\_5m} plateaus around $54\%$
+after $5{\times}10^6$ battles; ten agents at $5{\times}10^5$ battles
+each cover the state space more broadly than one agent at $5{\times}10^6$
+does, even though total simulated battles are identical at
+$5{\times}10^6$. Tie this to the $K$-saturation curve
+(Figure~\ref{fig:ksat}): the lift comes from \emph{state-space coverage
+breadth}, not from extra wall-clock work. This is the
+``coverage-versus-depth'' trade-off the paper makes explicit.}
 
 \subsection{Avoiding the Curse of Diversity}
 \label{sec:d_curse}
 
 The recently-documented ``Curse of Diversity'' failure mode for
 ensemble-based exploration \citep{lin2024curse} arises when ensemble
-members share a replay buffer: members trained on largely off-policy data
-relative to their own policy underperform a single-agent baseline. By
-construction, the ensemble in this paper does not share a buffer or any
-training data across members: each member is a separate process with its
-own random seed, its own opponent battles, and its own Q-table. The
-failure mode therefore does not apply, and our per-member solo win rates
-(Figure~\ref{fig:diag}, left) do not underperform a single-agent baseline.
+members share a replay buffer: members trained on largely off-policy
+data relative to their own policy underperform a single-agent baseline.
+By construction, the ensemble in this paper does not share a buffer or
+any training data across members: each member is a separate process with
+its own random seed, its own opponent battles, and its own $Q$-table.
+The failure mode therefore does not apply, and our per-member solo win
+rates (Figure~\ref{fig:diag}, left) do not underperform a single-agent
+baseline.
 
 \subsection{Limitations}
 \label{sec:d_limitations}
 
-\emph{[Prose to be written.]}
-
-% Honest limitations to enumerate:
-% (1) Single opponent. All evaluations are against SimpleHeuristicsPlayer
-%     in gen4ou. Generalization across opponents (e.g., MaxBasePower or
-%     a stronger learned agent) is untested.
-% (2) Single 20-Pokemon pool. We do not study generalization across
-%     pools.
-% (3) Tabular only. We do not extend the inference rule to deep value
-%     functions in this paper. Whether the +12.6 pp lift survives under
-%     function approximation is an open question.
-% (4) Evaluation K capped at 10. Our cap was a workstation memory limit,
-%     not a methodological choice. We trained 30 members but loaded
-%     10 at evaluation time. The K-saturation curve already plateaus
-%     by K=10, so the saturating shape itself is robust to this cap, but
-%     a tighter saturation point may exist at higher K.
-% (5) Per-member configuration. Each member uses the fixed winning
-%     configuration of the prior factorial study (Appendix A);
-%     we do not vary per-member hyperparameters and so cannot speak to
-%     whether the ensemble gain depends on a homogeneous member
-%     distribution.
+\guideblock{Enumerate the honest gaps. Treat each as a real limitation,
+not a teaser for hypothetical future work:
+(1) Single opponent. All evaluations are against
+\texttt{SimpleHeuristicsPlayer} in \texttt{gen4ou}; generalization across
+opponents (e.g., \texttt{MaxBasePower} or a stronger learned agent) is
+untested.
+(2) Single 20-Pokemon pool. We do not study generalization across pools.
+(3) Tabular only. The inference rule itself does not require a tabular
+$Q$-function, but whether the $+12.6$ pp lift survives under deep value
+approximation is an open empirical question.
+(4) $K$ capped at 10 at evaluation. This is a workstation memory limit
+($\approx 5.5$ GiB per member, ten members concurrent), not a
+methodological choice. The $K$-saturation curve already plateaus by
+$K{=}10$, so the saturating shape itself is robust to this cap, but a
+tighter saturation point at higher $K$ cannot be ruled out from these
+data.
+(5) Homogeneous per-member configuration. Every member uses the fixed
+winning configuration of the prior factorial study
+(Appendix~\ref{app:inherited_components}); we do not vary per-member
+hyperparameters and so cannot speak to whether the ensemble gain depends
+on homogeneity.}

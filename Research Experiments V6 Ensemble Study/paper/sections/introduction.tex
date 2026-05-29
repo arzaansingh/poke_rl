@@ -1,42 +1,54 @@
 % Section 1: Introduction (~1 page, ~700 words)
-% Write THIRD, after Method and Results are stable.
-%
-% Scope: this paper is about V6 (the K=10 tabular Q-function ensemble on
-% Pokemon gen4ou) only. Do NOT claim deep-RL extensions in the introduction:
-% they have not been implemented or evaluated. Reference V5 only as the
-% prior factorial study whose winning configuration becomes the per-member
-% training pipeline for V6; details of V5 live in Appendix A.
+% Outline only — prose pass deferred until after Friday meeting with
+% Prof.\ Zheng. All red-italic \guide{} blocks below are instructions
+% for what should go in each paragraph.
 
 \section{Introduction}
 \label{sec:introduction}
 
-\emph{[Prose to be written after Friday's meeting once the contribution framing is locked in.]}
+\guideblock{Paragraph 1 --- motivation. Tabular RL ceiling effect in
+stochastic, partially-observable two-player games. Pokemon as a
+$10^{12}$-state benchmark. Why the single-agent ceiling is the
+interesting problem. One concrete sentence on Pokemon's combination of
+move stochasticity, hidden opponent team, and turn-by-turn switch
+options. Cite \citet{simoes2020}, \citet{sahovic2020pokeenv} for the
+benchmark.}
 
-% Suggested structure (from OUTLINE.md):
-%
-% Paragraph 1 — motivation. Tabular RL ceiling effects in stochastic
-% partially-observable two-player games; Pokemon as a 10^12-state
-% benchmark.
-%
-% Paragraph 2 — why ensembling at all. Brief setup of the question.
-% Cite Wiering & van Hasselt 2008, Osband 2016, Lan 2020.
-%
-% Paragraph 3 — what is new in this paper specifically:
-%   (a) a read-only inference rule for tabular Q-function ensembles with
-%       heuristic-prior fallback for unseen states;
-%   (b) the first head-to-head comparison of soft / hard /
-%       confidence-weighted voting in tabular Q-learning at K up to 10,
-%       on a non-toy stochastic two-player game;
-%   (c) a compute-matched single-agent control (5M battles, single agent)
-%       against which the ensemble is benchmarked at the same evaluation
-%       budget.
-%
-% Paragraph 4 — result preview.
-% K=10 ensemble = 66.8 +/- 0.3 % vs SimpleHeuristicsPlayer over 100k
-% battles, +12.6 pp over the compute-matched single-agent baseline.
-%
-% Paragraph 5 — what this paper does NOT do. Inherited components
-% (hierarchical decomposition, heuristic Q-initialization) come from
-% prior factorial study (Appendix A); we do not claim them as
-% contributions. Deep-RL ensemble variants are open questions and not
-% addressed here.
+\guideblock{Paragraph 2 --- why ensembling at all. Brief setup of the
+question: in supervised learning bagging variance-reduces; in value-based
+RL the picture is messier (\citealp{lin2024curse} shows shared-buffer
+deep ensembles can underperform their own single-agent baseline). For
+\emph{independent-buffer tabular} agents, the question is open. Cite
+\citet{wiering2008}, \citet{osband2016bootstrapped},
+\citet{lan2020maxmin}, \citet{song2023survey}.}
+
+\guideblock{Paragraph 3 --- what is new in this paper specifically.
+List the three contributions cleanly:
+(a) a read-only inference rule for tabular Q-function ensembles with
+heuristic-prior fallback for unseen states (Equation~1 of
+Section~\ref{sec:method}), which keeps inference-time memory $O(K)$ in
+trained table size and avoids the OOM failure mode of cached-update
+variants;
+(b) the first head-to-head comparison of soft / hard /
+confidence-weighted voting in tabular Q-learning at $K$ up to 10 on a
+non-toy stochastic two-player game;
+(c) a compute-matched single-agent control trained on the same total
+simulated-battle budget ($5{\times}10^6$ battles) as the ensemble
+($10\times 5{\times}10^5$ battles), so the +12.6 pp lift cannot be
+attributed to extra compute.}
+
+\guideblock{Paragraph 4 --- result preview. State the headline numbers
+plainly. $K{=}10$ ensemble: $66.8\% \pm 0.3\%$ win rate vs.\
+\texttt{SimpleHeuristicsPlayer} over $100{,}000$ evaluation battles;
+$+12.6$ pp over compute-matched single agent; saturating $K$ curve;
+voting-rule effect $< 1$ pp at fixed $K$.}
+
+\guideblock{Paragraph 5 --- what this paper does NOT do. Inherited
+components (hierarchical action decomposition, heuristic
+Q-initialization) come from our prior factorial study
+\citep{singh2026v5} and are treated as fixed inputs to V6, not
+contributions of this paper; full details in
+Appendix~\ref{app:inherited_components}. Deep-RL ensemble extensions are
+open questions and are not addressed here. Generalization across
+opponents and Pokemon pools is also out of scope and is enumerated as a
+limitation in Section~\ref{sec:d_limitations}.}

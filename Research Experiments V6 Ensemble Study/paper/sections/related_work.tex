@@ -1,6 +1,5 @@
 % Section 2: Related Work (~1 page, ~750 words)
-% Three subsections, ~250 words each.
-% Use the lit review from the agent research; pull citations from references.bib.
+% Outline only — prose pass deferred. Three subsections, ~250 words each.
 
 \section{Related Work}
 \label{sec:related_work}
@@ -8,24 +7,43 @@
 \subsection{Ensemble methods in tabular reinforcement learning}
 \label{sec:rw_tabular}
 
-TODO. Cite: \citet{wiering2008}, \citet{fausser2011}, \citet{lan2020maxmin}, \citet{peer2021ebql}.
-Note algorithmic vs seed-only diversity; note none of these address stochastic 2-player games.
+\guideblock{One paragraph. Walk through the tabular ensemble line:
+\citet{wiering2008} (first systematic study of voting rules in
+$Q$-learning), \citet{fausser2011} (ensemble methods with function
+approximation), \citet{lan2020maxmin} (maxmin $Q$-learning as
+ensemble-style estimation-bias control), \citet{peer2021ebql} (ensemble
+bootstrapping for $Q$-learning). The distinction this paper draws: prior
+tabular ensemble work either lives in toy gridworld / small MDP regimes
+\emph{or} uses algorithmic diversity (different update rules per member);
+we use seed-only diversity in a non-toy stochastic two-player game.}
 
 \subsection{Ensemble methods in deep reinforcement learning}
 \label{sec:rw_deep}
 
-TODO. Cite: \citet{osband2016bootstrapped}, \citet{anschel2017avgdqn}, \citet{chen2021redq},
-\citet{lee2021sunrise}, \citet{lin2024curse}.
-
-Closing sentence: \citet{lin2024curse}'s ``Curse of Diversity'' failure mode requires shared
-replay buffers; our independent-table setup avoids it by construction.
+\guideblock{One paragraph. Cover the deep-RL ensemble line:
+\citet{osband2016bootstrapped} (bootstrapped DQN, posterior-sampling
+exploration), \citet{anschel2017avgdqn} (averaged DQN for variance
+reduction), \citet{chen2021redq} (randomized ensembled double
+$Q$-learning), \citet{lee2021sunrise} (unified ensemble framework).
+Close with the \citet{lin2024curse} ``Curse of Diversity'' failure mode:
+deep ensembles sharing a replay buffer can underperform their own
+single-agent baseline. Set up the contrast: our independent-table setup
+has no shared buffer and is shown to be immune by construction (full
+discussion in Section~\ref{sec:d_curse}).}
 
 \subsection{Reinforcement learning for Pokemon}
 \label{sec:rw_pokemon}
 
-TODO. Cite in order: \citet{lee2017showdown}, \citet{kalose2018}, \citet{sahovic2020pokeenv},
-\citet{simoes2020}, \citet{wang2024mit}, \citet{hu2024pokellmon}, \citet{karten2025pokechamp},
-\citet{grigsby2025metamon}, \citet{vgcbench2025}.
-
-Closing sentence: To our knowledge, no prior paper trains K independent tabular Q-function agents
-and combines them by action-time voting on Pokemon battles.
+\guideblock{One paragraph in roughly chronological order:
+\citet{lee2017showdown} (early Showdown AI competition),
+\citet{kalose2018} (Stanford project, early Pokemon RL writeup),
+\citet{sahovic2020pokeenv} (\texttt{poke-env}, the library used here),
+\citet{simoes2020} (deep RL on the Showdown simulator),
+\citet{wang2024mit} (MIT M.Eng.\ thesis on random-battle RL),
+\citet{hu2024pokellmon} (LLM-as-policy approach),
+\citet{karten2025pokechamp} (expert-level minimax LM agent),
+\citet{grigsby2025metamon} (transformer offline RL),
+\citet{vgcbench2025} (VGC team-strategy benchmark). Close with the gap
+this paper addresses: to our knowledge, no prior paper trains $K$
+independent tabular $Q$-function agents under identical hyperparameters
+and combines them by inference-time voting on Pokemon battles.}

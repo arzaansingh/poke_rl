@@ -1,10 +1,26 @@
-% Abstract — write last; ~200 words; structure follows OUTLINE.md.
-%
-% 5-sentence skeleton:
-% 1. Setup — single-agent tabular RL ceiling effect in stochastic POMDPs.
-% 2. Method — K independent Q(lambda) agents combined by voting at inference, read-only.
-% 3. Headline result — K=10 ensemble 66.8% vs heuristic, +12.6pp over compute-matched single agent.
-% 4. K-saturation + voting comparison — Osband-shape curve, voting rule choice has small effect.
-% 5. Significance — first Q-function ensemble study on Pokemon; methodology generalizes.
+% Abstract — write LAST, after Friday's meeting fixes the contribution framing.
+% Target ~200 words. Each \guide{} below marks one sentence in the final draft.
 
-TODO write abstract last.
+\guide{Sentence 1 (setup): single-agent tabular RL hits a ceiling effect in
+stochastic, partially-observable two-player games; Pokemon (gen4ou) is the
+benchmark.}
+
+\guide{Sentence 2 (method): we train $K$ independent tabular $Q(\lambda)$
+agents under identical hyperparameters but different random seeds and
+combine them at inference time using a read-only voting rule with a
+heuristic-prior fallback for unseen state-action pairs (no Q-table
+mutation at evaluation time).}
+
+\guide{Sentence 3 (headline): $K=10$ ensemble reaches $66.8\% \pm 0.3\%$
+win rate vs.\ \texttt{SimpleHeuristicsPlayer} over $100{,}000$ battles,
+$+12.6$ pp over a compute-matched single-agent baseline trained for the
+same total simulated-battle budget.}
+
+\guide{Sentence 4 (analysis): the $K$-saturation curve has the
+Osband-style concave-up shape and plateaus by $K{=}10$; voting rule
+(soft / hard / confidence-weighted) has only a small effect at fixed
+$K$.}
+
+\guide{Sentence 5 (significance): first Q-function-ensemble study on
+Pokemon; the read-only inference rule is the load-bearing methodological
+contribution and is independent of the underlying value-function class.}

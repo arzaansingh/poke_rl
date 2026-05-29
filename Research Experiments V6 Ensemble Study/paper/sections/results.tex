@@ -1,6 +1,7 @@
 % Section 5: Results (~2 pages, ~2000 words)
-% Section bodies are placeholders — replace with prose during writing pass.
-% Figures are linked so cross-references resolve and the build is end-to-end clean.
+% Outline only for prose; figures + captions + concrete numbers are kept
+% because they reflect actual measurements. Each \guideblock{} marks
+% where interpretive prose goes during the writing pass.
 
 \section{Results}
 \label{sec:results}
@@ -16,7 +17,13 @@
   \label{fig:headline}
 \end{figure}
 
-The headline result is shown in \cref{fig:headline}. \emph{[Subsection prose to be written; numbers: K=10 SOFT = 66.8\% $\pm$ 0.3\%, baseline\_5m = 54.2\% $\pm$ 0.3\%, $\Delta = +12.6$ pp, $z = 62$.]}
+\guideblock{One paragraph: state the headline numbers
+($K{=}10$ soft = $66.8\% \pm 0.3\%$, \texttt{baseline\_5m} =
+$54.2\% \pm 0.3\%$, $\Delta = +12.6$ pp, $z \approx 62$, $p \ll 10^{-3}$),
+then say what they mean. Key argument: the ensemble is compute-matched,
+so the lift is not buyable with more single-agent training; it is
+attributable to the ensemble construction itself. Forward-reference
+Section~\ref{sec:d_why_works} for the mechanism.}
 
 \begin{figure}[t]
   \centering
@@ -25,9 +32,15 @@ The headline result is shown in \cref{fig:headline}. \emph{[Subsection prose to 
   \label{fig:head2head}
 \end{figure}
 
-\Cref{fig:head2head} provides a direct head-to-head test. \emph{[Prose to be written.]}
+\guideblock{One paragraph on Figure~\ref{fig:head2head}: when ensemble
+and \texttt{baseline\_5m} face each other directly (same pool, same
+deterministic team sampler), the ensemble wins $59.7\%$ of matches. This
+is stronger than the indirect-via-heuristic comparison because both
+agents face an opponent of identical strength on every battle, so the
+non-coin-flip outcome rules out the ``the heuristic just happens to be
+weak against ensembles'' alternative hypothesis.}
 
-\subsection{K-saturation curve}
+\subsection{\texorpdfstring{$K$}{K}-saturation curve}
 \label{sec:r_ksat}
 
 \begin{figure}[t]
@@ -37,7 +50,14 @@ The headline result is shown in \cref{fig:headline}. \emph{[Subsection prose to 
   \label{fig:ksat}
 \end{figure}
 
-\Cref{fig:ksat} shows the K-saturation curve. \emph{[Prose to be written; K=1 55.9\%, K=3 62.7\%, K=5 65.1\%, K=10 66.8\%.]}
+\guideblock{One paragraph: report the curve ($K{=}1$: $55.9\%$;
+$K{=}3$: $62.7\%$; $K{=}5$: $65.1\%$; $K{=}10$: $66.8\%$) and note its
+concave-up saturating shape. Note that this matches Osband-2016's
+diminishing-returns prediction for posterior-style ensembles. Be explicit
+that the $K{=}10$ cap is a workstation memory limit (members $\approx 5.5$
+GiB each), not a methodological choice; whether the curve plateaus
+permanently or has a second knee beyond $K{=}10$ is unresolved and is
+listed as a limitation in Section~\ref{sec:d_limitations}.}
 
 \subsection{Voting strategy comparison}
 \label{sec:r_voting}
@@ -49,7 +69,14 @@ The headline result is shown in \cref{fig:headline}. \emph{[Subsection prose to 
   \label{fig:voting}
 \end{figure}
 
-\Cref{fig:voting} compares the three voting rules. \emph{[Prose: SOFT 66.8\%, HARD 65.6\%, CONFIDENCE 67.6\%; all within noise; CONFIDENCE is the slight winner; HARD is the only rule that discards magnitude information.]}
+\guideblock{One paragraph: SOFT $66.8\%$, HARD $65.6\%$, CONFIDENCE
+$67.6\%$. All three within $2$~pp; confidence-weighted is the nominal
+winner but the difference vs.\ soft is within the binomial CI overlap.
+Brief mechanism: HARD discards Q-value magnitude (vote becomes
+information-poor), so it loses some lift; CONFIDENCE preserves more
+information but the marginal gain is small at $K{=}10$ because soft
+voting already averages magnitudes. Take-away for the reader: rule
+choice matters less than the existence of an ensemble.}
 
 \subsection{Per-member diagnostics}
 \label{sec:r_diag}
@@ -67,7 +94,15 @@ The headline result is shown in \cref{fig:headline}. \emph{[Subsection prose to 
   \label{fig:diag}
 \end{figure}
 
-\Cref{fig:diag} presents two diagnostics that defend the methodology against reviewer concerns. \emph{[Prose to be written.]}
+\guideblock{Two short paragraphs. (i) Per-member solo distribution: mean
+solo win rate is in the weak-learner regime ($\sim 55$--$57\%$), so the
+ensemble is genuinely converting weak learners into a stronger predictor
+(Schapire framing). (ii) Disagreement + fallback diagnostics:
+non-zero pairwise argmax disagreement means the members have not all
+collapsed onto the same policy --- the ensemble is doing real
+combination work. The fallback rate quantifies how often the inference
+rule actually invokes the heuristic prior; the modest observed rate is
+why the read-only rule does not visibly hurt performance.}
 
 \subsection{Comparison to prior work}
 \label{sec:r_priorwork}
@@ -79,4 +114,13 @@ The headline result is shown in \cref{fig:headline}. \emph{[Subsection prose to 
   \label{fig:priorwork}
 \end{figure}
 
-\Cref{fig:priorwork} situates the V6 result in the published Pokemon-RL literature. \emph{[Prose to be written, with format caveat re: Wang's randombattle setup.]}
+\guideblock{One paragraph situating V6 in the published literature.
+Important caveats to spell out so reviewers do not flag them: (i)
+\citet{wang2024mit} uses random battles, not gen4ou OU, so the comparison
+is qualitative; (ii) \citet{grigsby2025metamon} uses massive offline data
+and a transformer, so the comparison is about \emph{position in the
+landscape} not method-vs-method; (iii) our number is reported with
+$N{=}10^5$ battles, a larger evaluation than most prior work, so the CI
+is tighter. Take-away: tabular ensembling sits competitively in the
+landscape while using orders-of-magnitude less compute than the deep-RL
+endpoints.}

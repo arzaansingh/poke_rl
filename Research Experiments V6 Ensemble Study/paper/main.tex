@@ -31,6 +31,7 @@
 % Color setup matching the figure palette (Tulane green primary)
 \definecolor{tulanegreen}{HTML}{006747}
 \definecolor{tulaneblue}{HTML}{418FDE}
+\definecolor{guidered}{HTML}{B00020}
 \hypersetup{
   colorlinks=true,
   linkcolor=tulanegreen,
@@ -38,23 +39,30 @@
   urlcolor=tulaneblue,
 }
 
+% Outline guide macro. Renders red italic text inline; intended as a
+% short reminder of what the prose in this paragraph should accomplish.
+% Use \guide{...} for inline reminders, \guideblock{...} for a paragraph
+% block. Both will be stripped once the prose pass replaces them.
+\newcommand{\guide}[1]{{\color{guidered}\itshape [#1]}}
+\newcommand{\guideblock}[1]{\par\begingroup\color{guidered}\itshape\noindent#1\par\endgroup}
+
 % Title
 \title{Ensembling Tabular Q-Learning Agents for Competitive Pokemon\\
   A Read-Only Inference Method with Heuristic-Prior Fallback}
 
-% Authors
+% Author: Arzaan is the sole author of this paper. Zizhan Zheng is the
+% research advisor and is acknowledged via a footnote on the author line
+% (NeurIPS template convention via \thanks{}). His name does NOT appear
+% on the author line itself.
 \author{
-  Arzaan Singh \\
+  Arzaan Singh\thanks{Research advisor: Dr.\ Zizhan Zheng, Department of
+  Computer Science, Tulane University (zzheng3@tulane.edu).
+  Prof.\ Zheng supervises this research line but is not an author of
+  this paper.} \\
   Department of Computer Science \\
   Tulane University \\
   New Orleans, LA \\
-  \texttt{singharzaan@gmail.com} \\
-  \And
-  Zizhan Zheng \\
-  Department of Computer Science \\
-  Tulane University \\
-  New Orleans, LA \\
-  \texttt{zzheng3@tulane.edu}
+  \texttt{singharzaan@gmail.com}
 }
 
 \begin{document}
