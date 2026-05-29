@@ -1,4 +1,8 @@
 % Section 6: Discussion (~1 page, ~900 words)
+% Scope: only discuss what the V6 results actually show. Avoid speculation
+% about deep RL variants (not run), multi-pool generalization (not run),
+% multi-opponent generalization (not run). These belong in the
+% "Limitations" subsection as honest gaps, not as imminent work.
 
 \section{Discussion}
 \label{sec:discussion}
@@ -6,29 +10,47 @@
 \subsection{Why the ensemble works in this regime}
 \label{sec:d_why_works}
 
-% Variance reduction from uncorrelated stochastic exploration paths; voting averages out idiosyncratic errors
+\emph{[Prose to be written. Variance reduction across stochastic exploration paths producing uncorrelated errors; voting averages them out. Cross-reference per-member disagreement diagnostic.]}
 
 \subsection{Why ensembling beats more single-agent compute}
 \label{sec:d_why_beats}
 
-% Diminishing returns + state-space coverage; 30M battles across K=10 agents covers more of the
-% state distribution than 5M battles in a single agent.
-
-\subsection{Comparison to deep RL}
-\label{sec:d_vs_deep}
-
-% Concede: Wang 2024, Metamon outperform V6, but at 10^2 -- 10^4x more compute.
-% V6 is a Pareto point on the compute/performance curve, not the absolute peak.
+\emph{[Prose to be written. The compute-matched single agent at 5M battles plateaus around 54\%; ten agents at 1M battles each cover state-space more broadly than one agent at 5M does, even though total simulated battle count is identical at 50M. Tie this to the K-saturation curve.]}
 
 \subsection{Avoiding the Curse of Diversity}
 \label{sec:d_curse}
 
-% Lin et al. 2024 documented that shared-buffer ensembles' members underperform single-agent baselines.
-% V6 trains independent rollouts with independent Q-tables -- failure mode does not apply by construction.
+The recently-documented ``Curse of Diversity'' failure mode for
+ensemble-based exploration \citep{lin2024curse} arises when ensemble
+members share a replay buffer: members trained on largely off-policy data
+relative to their own policy underperform a single-agent baseline. By
+construction, the ensemble in this paper does not share a buffer or any
+training data across members: each member is a separate process with its
+own random seed, its own opponent battles, and its own Q-table. The
+failure mode therefore does not apply, and our per-member solo win rates
+(Figure~\ref{fig:diag}, left) do not underperform a single-agent baseline.
 
 \subsection{Limitations}
 \label{sec:d_limitations}
 
-% Single opponent (SimpleHeuristicsPlayer), single 20-Pokemon pool, no test-time pool/opponent generalization
-% Tabular only; no deep-RL ablation
-% K capped at 10 in evaluation due to memory; the K=30 training budget was conservative
+\emph{[Prose to be written.]}
+
+% Honest limitations to enumerate:
+% (1) Single opponent. All evaluations are against SimpleHeuristicsPlayer
+%     in gen4ou. Generalization across opponents (e.g., MaxBasePower or
+%     a stronger learned agent) is untested.
+% (2) Single 20-Pokemon pool. We do not study generalization across
+%     pools.
+% (3) Tabular only. We do not extend the inference rule to deep value
+%     functions in this paper. Whether the +12.6 pp lift survives under
+%     function approximation is an open question.
+% (4) Evaluation K capped at 10. Our cap was a workstation memory limit,
+%     not a methodological choice. We trained 30 members but loaded
+%     10 at evaluation time. The K-saturation curve already plateaus
+%     by K=10, so the saturating shape itself is robust to this cap, but
+%     a tighter saturation point may exist at higher K.
+% (5) Per-member configuration. Each member uses the fixed winning
+%     configuration of the prior factorial study (Appendix A);
+%     we do not vary per-member hyperparameters and so cannot speak to
+%     whether the ensemble gain depends on a homogeneous member
+%     distribution.

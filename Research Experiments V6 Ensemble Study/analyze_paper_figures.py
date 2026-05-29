@@ -47,17 +47,20 @@ from shared.config import ENSEMBLE_RESULTS_DIR
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# Palette — colorblind-safe (Wong / Bang-Wong palette + Tulane accents)
+# Palette — dark Tulane + brushed gold (matches V5 poster aesthetic;
+# avoids the saturated Pokémon yellow / bright blue look of generic
+# matplotlib defaults). All colors are dark, muted, colorblind-friendly.
 # ═══════════════════════════════════════════════════════════════════════
 
-C_ENSEMBLE   = "#006747"   # Tulane green — primary ensemble color
-C_BASELINE   = "#0072B2"   # Wong blue — compute-matched single agent
-C_REFERENCE  = "#999999"   # neutral gray — prior work, V5 reference
-C_HARD       = "#D55E00"   # Wong vermillion — hard voting
-C_SOFT       = "#006747"   # Tulane green — soft voting
-C_CONFIDENCE = "#56B4E9"   # Wong sky blue — confidence voting
-C_FILL       = "#E5F2EC"   # light tint of Tulane green for CI bands
-C_COIN_FLIP  = "#CCCCCC"   # light gray — null reference
+C_ENSEMBLE   = "#003D2B"   # Tulane DARK green   — V6 ensemble primary
+C_BASELINE   = "#9C7C38"   # Antique brushed gold — compute-matched single agent
+C_REFERENCE  = "#4A5568"   # Slate gray          — prior work, V5 reference
+C_HARD       = "#7C2D2D"   # Deep burgundy red    — hard voting (Pokemon Red darkened)
+C_SOFT       = "#003D2B"   # Tulane dark green    — soft voting
+C_CONFIDENCE = "#1F3A5F"   # Pokemon Crystal navy — confidence voting
+C_FILL       = "#D4DDD7"   # Very subtle green tint for CI bands
+C_COIN_FLIP  = "#A0AEC0"   # Light cool gray — null reference
+C_GOLD_FILL  = "#E8DBB8"   # Pale gold tint for highlight regions
 
 V5_M8_REF_WR = 0.598
 

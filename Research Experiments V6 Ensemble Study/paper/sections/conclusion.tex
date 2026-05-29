@@ -1,12 +1,23 @@
 % Section 7: Conclusion (~1/3 page, ~250 words)
+% Keep scope tight: state what was done, what was found, do not
+% over-promise future work that has not been executed.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-% Restate contributions briefly, restate headline number, future work directions.
+\emph{[Restate the contribution and the headline number in 2-3 sentences after the main text is finalized. Hold the prose pass for after the Friday meeting.]}
 
-% Future work:
-% (a) Deep-RL variants of ensemble members (DQN, PPO) to test if the gain persists under function approximation.
-% (b) Different diversity sources (bagging, HP perturbation) to compare with seed-only diversity.
-% (c) Multi-opponent / multi-pool generalization.
-% (d) Hierarchical voting variant (independent voting at master and sub-agent levels).
+% Open directions to mention only as natural extensions of what was done.
+% Do NOT claim deep-RL ensemble extensions as imminent work since none
+% have been implemented or tested yet. Reasonable open questions:
+%   (i)  per-member configuration robustness: are the ensemble gains we
+%        report robust if individual members are trained with different
+%        hyperparameters drawn from the V5 grid, rather than the fixed
+%        winning configuration?
+%   (ii) different diversity sources: would bagging the 20-Pokemon pool
+%        per member, or seeding members with different smart-init scoring
+%        functions, change the diversity-vs-bias trade-off?
+%   (iii) the K vs evaluation-memory bound: our cap at K=10 was a
+%        workstation memory limit, not a methodological choice. A cloud
+%        evaluation with more memory could trace the K-saturation curve
+%        further, though the curve in Section 5 already plateaus.
